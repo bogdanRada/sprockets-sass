@@ -1,10 +1,10 @@
+# frozen_string_literal: true
 module Sprockets
   module Sass
+    # Preprocessor for SCSS files
     class ScssTemplate < SassTemplate
-      self.default_mime_type = 'text/css'
-      
       # Define the expected syntax for the template
-      def syntax
+      def self.syntax
         :scss
       end
     end
