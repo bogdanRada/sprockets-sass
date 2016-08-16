@@ -1,56 +1,43 @@
-require 'tilt'
-
 module Sprockets
   module Sass
-    class SassTemplate < Tilt::SassTemplate
-      self.default_mime_type = 'text/css'
+    class SassTemplate
 
-      # A reference to the current Sprockets context
-      attr_reader :context
+      def initialize(filename, &block)
+        @filename = filename
+        @source   = block.call
+      end
 
-      # Determines if the Sass functions have been initialized.
-      # They can be 'initialized' without actually being added.
-      @sass_functions_initialized = false
-      class << self
-        attr_accessor :sass_functions_initialized
-        alias :sass_functions_initialized? :sass_functions_initialized
+      def render(context, empty_hash_wtf)
+        self.class.run(@filename, @source, context)
+      end
 
-        # Templates are initialized once the functions are added.
-        def engine_initialized?
-          super && sass_functions_initialized?
+      def self.read_template_file(file)
+        data = File.open(file, 'rb') { |io| io.read }
+        if data.respond_to?(:force_encoding)
+          # Set it to the default external (without verifying)
+          data.force_encoding(Encoding.default_external) if Encoding.default_external
         end
+        data
       end
 
-      # Add the Sass functions if they haven't already been added.
-      def initialize_engine
-        super unless self.class.superclass.engine_initialized?
+      def self.run(filename, source, context)
+        begin
+          default_encoding = options.delete :default_encoding
 
-        if Sass.add_sass_functions != false
-          begin
-            require 'sprockets/helpers'
-            require 'sprockets/sass/functions'
-          rescue LoadError; end
-        end
+          # load template data and prepare (uses binread to avoid encoding issues)
+          data = read_template_file(filename)
 
-        self.class.sass_functions_initialized = true
-      end
+          if data.respond_to?(:force_encoding)
+            if default_encoding
+              data = data.dup if data.frozen?
+              data.force_encoding(default_encoding)
+            end
 
-      # Define the expected syntax for the template
-      def syntax
-        :sass
-      end
-
-      # See `Tilt::Template#prepare`.
-      def prepare
-        @context = nil
-        @output  = nil
-      end
-
-      # See `Tilt::Template#evaluate`.
-      def evaluate(context, locals, &block)
-        @output ||= begin
-          @context = context
-          ::Sass::Engine.new(data, sass_options).render
+            if !data.valid_encoding?
+              raise Encoding::InvalidByteSequenceError, "#{filename} is not valid #{data.encoding}"
+            end
+          end
+          ::Sass::Engine.new(data, sass_options(filename, context).merge(syntax: self.syntax, line: 1, filename: filename)).render
         rescue ::Sass::SyntaxError => e
           # Annotates exception message with parse line number
           context.__LINE__ = e.sass_backtrace.first[:line]
@@ -58,43 +45,36 @@ module Sprockets
         end
       end
 
-      protected
+      def self.call(input)
+        filename = input[:filename]
+        source   = input[:data]
+        context  = input[:environment].context_class.new(input)
 
-      # Returns a Sprockets-aware cache store for Sass::Engine.
-      def cache_store
-        return nil if context.environment.cache.nil?
-
-        if defined?(Sprockets::SassCacheStore)
-          Sprockets::SassCacheStore.new context.environment
-        else
-          CacheStore.new context.environment
-        end
+        result = run(filename, source, context)
+        context.metadata.merge(data: result)
       end
 
-      # Assemble the options for the `Sass::Engine`
-      def sass_options
-        # Allow the use of custom SASS importers, making sure the
-        # custom importer is a `Sprockets::Sass::Importer`
-        if default_sass_options.has_key?(:importer) &&
-           default_sass_options[:importer].is_a?(Importer)
-          importer = default_sass_options[:importer]
-        else
-          importer = Importer.new
-        end
-
-        merge_sass_options(default_sass_options, options).merge(
-          :filename    => eval_file,
-          :line        => line,
-          :syntax      => syntax,
-          :cache_store => cache_store,
-          :importer    => importer,
-          :custom      => { :sprockets_context => context }
-        )
+      def self.prepare_data_for_sass_engine(filename, source, context)
+        Tilt::SassTemplate.new(filename, sass_options(filename).merge(syntax: self.syntax)).render
       end
 
-      # Get the default, global Sass options. Start with Compass's
-      # options, if it's available.
-      def default_sass_options
+      def self.read_template_file(file)
+        data = File.open(file, 'rb') { |io| io.read }
+        if data.respond_to?(:force_encoding)
+          # Set it to the default external (without verifying)
+          data.force_encoding(Encoding.default_external) if Encoding.default_external
+        end
+        data
+      end
+
+      def self.merge_sass_options(options, other_options)
+        if (load_paths = options[:load_paths]) && (other_paths = other_options[:load_paths])
+          other_options[:load_paths] = other_paths + load_paths
+        end
+        options.merge other_options
+      end
+
+      def self.default_sass_options
         if defined?(Compass)
           merge_sass_options Compass.sass_engine_options.dup, Sprockets::Sass.options
         else
@@ -102,14 +82,47 @@ module Sprockets
         end
       end
 
-      # Merges two sets of `Sass::Engine` options, prepending
-      # the `:load_paths` instead of clobbering them.
-      def merge_sass_options(options, other_options)
-        if (load_paths = options[:load_paths]) && (other_paths = other_options[:load_paths])
-          other_options[:load_paths] = other_paths + load_paths
-        end
-        options.merge other_options
+      def self.syntax
+        :sass
       end
+
+      def self.cache_store(context)
+        return nil if context.environment.cache.nil?
+
+        if defined?(Sprockets::SassCacheStore)
+          Sprockets::SassCacheStore.new context.environment
+        else
+          Sprockets::Sass::CacheStore.new context.environment
+        end
+      end
+
+      def self.options
+        {
+          default_encoding: 'utf-8'
+        }
+      end
+
+      def self.sass_options(filename, context)
+        # Allow the use of custom SASS importers, making sure the
+        # custom importer is a `Sprockets::Sass::Importer`
+        if default_sass_options.has_key?(:importer) &&
+          default_sass_options[:importer].is_a?(Importer)
+          importer = default_sass_options[:importer]
+        else
+          importer = Sprockets::Sass::Importer.new
+        end
+
+        merge_sass_options(default_sass_options, options).merge(
+        :filename    => filename,
+        :line        => 1,
+        :syntax      => syntax,
+        :cache_store => cache_store(context),
+        :importer    => importer,
+        :custom      => { :sprockets_context => context }
+        )
+      end
+
+
     end
   end
 end

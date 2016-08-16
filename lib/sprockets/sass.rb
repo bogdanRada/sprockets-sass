@@ -4,26 +4,37 @@ require 'sprockets/sass/sass_template'
 require 'sprockets/sass/scss_template'
 require 'sprockets/engines'
 
+require 'sprockets/helpers'
+require 'sprockets/sass/functions'
+
 module Sprockets
-  module Sass
-    autoload :CacheStore, 'sprockets/sass/cache_store'
-    autoload :Compressor, 'sprockets/sass/compressor'
-    autoload :Importer,   'sprockets/sass/importer'
-    
-    class << self
-      # Global configuration for `Sass::Engine` instances.
-      attr_accessor :options
-      
-      # When false, the asset path helpers provided by
-      # sprockets-helpers will not be added as Sass functions.
-      # `true` by default.
-      attr_accessor :add_sass_functions
-    end
-    
-    @options = {}
-    @add_sass_functions = true
+ module Sass
+  autoload :CacheStore, 'sprockets/sass/cache_store'
+  autoload :Compressor, 'sprockets/sass/compressor'
+  autoload :Importer,   'sprockets/sass/importer'
+
+  class << self
+   # Global configuration for `Sass::Engine` instances.
+   attr_accessor :options
+
+   # When false, the asset path helpers provided by
+   # sprockets-helpers will not be added as Sass functions.
+   # `true` by default.
+   attr_accessor :add_sass_functions
   end
-  
-  register_engine '.sass', Sass::SassTemplate
-  register_engine '.scss', Sass::ScssTemplate
+
+  @options = {}
+  @add_sass_functions = true
+ end
+
+ if respond_to?(:register_transformer)
+  require 'sprockets/processing'
+  extend Sprockets::Processing
+  register_preprocessor 'text/sass',Sprockets::Sass::SassTemplate
+  register_preprocessor 'text/scss', Sprockets::Sass::ScssTemplate
+  else
+   register_engine '.sass', Sprockets::Sass::SassTemplate
+   register_engine '.scss', Sprockets::Sass::ScssTemplate
+  end
+
 end

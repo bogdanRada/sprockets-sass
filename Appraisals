@@ -1,23 +1,23 @@
-appraise 'sass_3.1' do
-  gem 'sass', '~> 3.1.0'
-  gem 'compass', '~> 0.12.0'
-end
+# appraise 'sass_3.1' do
+#   gem 'sass', '~> 3.1.0'
+#   gem 'compass', '~> 0.12.0'
+# end
 
-appraise 'sass_3.3' do
-  gem 'sass', '~> 3.3.0'
-  gem 'compass', '~> 1.0.0'
-end
-
-appraise 'sass_3.4' do
-  gem 'sass', '~> 3.4.0'
-  gem 'compass', '~> 1.0.0'
-end
-
-appraise 'compass_0.11' do
-  gem 'sass', '~> 3.2.0'
-  gem 'compass', '~> 0.11.0'
-end
-
+# appraise 'sass_3.3' do
+#   gem 'sass', '~> 3.3.0'
+#   gem 'compass', '~> 1.0.0'
+# end
+#
+# appraise 'sass_3.4' do
+#   gem 'sass', '~> 3.4.0'
+#   gem 'compass', '~> 1.0.0'
+# end
+#
+# appraise 'compass_0.11' do
+#   gem 'sass', '~> 3.2.0'
+#   gem 'compass', '~> 0.11.0'
+# end
+#
 appraise 'sprockets_2.2' do
   gem 'sprockets', '~> 2.2.0'
   gem 'sass', '~> 3.2.0'

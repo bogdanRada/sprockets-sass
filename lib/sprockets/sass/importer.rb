@@ -134,7 +134,7 @@ module Sprockets
       def evaluate(context, path)
         attributes = context.environment.attributes_for(path)
         processors = context.environment.preprocessors(attributes.content_type) + attributes.engines.reverse
-        processors.delete_if { |processor| processor < Tilt::SassTemplate }
+        processors.delete_if { |processor| processor < Sprockets::Sass::SassTemplate }
         context.evaluate(path, :processors => processors)
       end
     end
