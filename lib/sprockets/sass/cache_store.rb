@@ -21,6 +21,7 @@ module Sprockets
         else
           nil
         end
+
       end
     end
   end

@@ -6,9 +6,7 @@ describe Sprockets::Sass do
     @assets = @root.directory 'assets'
     @env = Sprockets::Environment.new @root.to_s
     @env.append_path @assets.to_s
-    @env.register_postprocessor 'text/css', :fail_postprocessor do |context, data|
-      data.gsub /@import/, 'fail engine'
-    end
+    @env.register_postprocessor 'text/css', FailPostProcessor
   end
 
   after :each do
@@ -18,7 +16,14 @@ describe Sprockets::Sass do
   it 'processes scss files normally' do
     @assets.file 'main.css.scss', '//= require dep'
     @assets.file 'dep.css.scss', 'body { color: blue; }'
-    asset = @env['main.css']
+    asset = @env['main']
+    expect(asset.to_s).to eql("body {\n  color: blue; }\n")
+  end
+
+  xit 'processes scss files normally without the .css extension' do
+    @assets.file 'main.scss', '//= require dep'
+    @assets.file 'dep.scss', 'body { color: blue; }'
+    asset = @env['main']
     expect(asset.to_s).to eql("body {\n  color: blue; }\n")
   end
 
@@ -209,13 +214,14 @@ describe Sprockets::Sass do
     dep = @assets.file 'dep.css.scss', '$color: blue;'
 
     asset = @env['main.css']
-    expect(asset).to be_fresh(@env)
+    old_asset = asset.dup
+    expect(asset).to be_fresh(@env, old_asset)
 
     mtime = Time.now + 1
     dep.open('w') { |f| f.write '$color: red;' }
     dep.utime mtime, mtime
 
-    expect(asset).to_not be_fresh(@env)
+    expect(asset).to_not be_fresh(@env, old_asset)
   end
 
   it 'adds dependencies from assets when imported' do
@@ -224,13 +230,14 @@ describe Sprockets::Sass do
     dep = @assets.file 'dep-2.css.scss', '$color: blue;'
 
     asset = @env['main.css']
-    expect(asset).to be_fresh(@env)
+    old_asset = asset.dup
+    expect(asset).to be_fresh(@env, old_asset)
 
     mtime = Time.now + 1
     dep.open('w') { |f| f.write '$color: red;' }
     dep.utime mtime, mtime
 
-    expect(asset).to_not be_fresh(@env)
+    expect(asset).to_not be_fresh(@env, old_asset)
   end
 
   it 'adds dependencies when imported from a glob' do
@@ -239,13 +246,14 @@ describe Sprockets::Sass do
     dep = @assets.file 'folder/_dep-2.css.scss', '$bg-color: red;'
 
     asset = @env['main.css']
-    expect(asset).to be_fresh(@env)
+    old_asset = asset.dup
+    expect(asset).to be_fresh(@env, old_asset)
 
     mtime = Time.now + 1
     dep.open('w') { |f| f.write "$bg-color: white;" }
     dep.utime mtime, mtime
 
-    expect(asset).to_not be_fresh(@env)
+    expect(asset).to_not be_fresh(@env, old_asset)
   end
 
   it "uses the environment's cache" do

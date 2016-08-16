@@ -19,6 +19,11 @@ TestConstruct::PathnameExtensions.class_eval do
 
 end
 
+# def nested_css_sprockets3(line)
+#   new_line = Sprockets.respond_to?(:register_transformer) ? line.gsub(/(\n[[:space:]]+)+/, ' ') : line
+#   new_line
+# end
+
 # Requires supporting files with custom matchers and macros, etc,
 # in ./support/ and its subdirectories.
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each { |f| require f }

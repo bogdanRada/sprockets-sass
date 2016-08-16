@@ -11,7 +11,7 @@ module Sprockets
       @sass_functions_initialized = false
       class << self
         attr_accessor :sass_functions_initialized
-         alias :sass_functions_initialized? :sass_functions_initialized
+        alias :sass_functions_initialized? :sass_functions_initialized
         # Templates are initialized once the functions are added.
         def engine_initialized?
           sass_functions_initialized?
@@ -20,7 +20,7 @@ module Sprockets
 
       # Add the Sass functions if they haven't already been added.
       def initialize_engine
-         return if self.class.engine_initialized?
+        return if self.class.engine_initialized?
 
         if Sass.add_sass_functions != false
           begin
@@ -47,11 +47,26 @@ module Sprockets
 
       def self.run(filename, source, context)
         begin
-          Tilt::SassTemplate.new(filename, sass_options(filename, context)).render(self)
+          default_encoding = options.delete :default_encoding
+
+          # load template data and prepare (uses binread to avoid encoding issues)
+          data = read_template_file(filename)
+
+          if data.respond_to?(:force_encoding)
+            if default_encoding
+              data = data.dup if data.frozen?
+              data.force_encoding(default_encoding)
+            end
+
+            if !data.valid_encoding?
+              raise Encoding::InvalidByteSequenceError, "#{filename} is not valid #{data.encoding}"
+            end
+          end
+          ::Sass::Engine.new(data, sass_options(filename, context)).render
         rescue ::Sass::SyntaxError => e
           # Annotates exception message with parse line number
           context.__LINE__ = e.sass_backtrace.first[:line]
-          raise e
+          raise [e, e.backtrace].inspect
         end
       end
 
@@ -121,7 +136,6 @@ module Sprockets
         else
           importer = Sprockets::Sass::Importer.new
         end
-
         merge_sass_options(default_sass_options, options).merge(
         :filename    => filename,
         :line        => 1,

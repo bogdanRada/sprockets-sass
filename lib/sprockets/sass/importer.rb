@@ -8,7 +8,7 @@ module Sprockets
 
       # @see Sass::Importers::Base#find_relative
       def find_relative(path, base_path, options)
-        if path =~ GLOB
+        if path.to_s =~ GLOB
           engine_from_glob(path, base_path, options)
         else
           engine_from_path(path, base_path, options)

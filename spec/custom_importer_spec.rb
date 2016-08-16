@@ -12,18 +12,16 @@ describe Sprockets::Sass::SassTemplate do
     @assets = @root.directory 'assets'
     @env = Sprockets::Environment.new @root.to_s
     @env.append_path @assets.to_s
-    @env.register_postprocessor 'text/css', :fail_postprocessor do |_, data|
-      data.gsub /@import/, 'fail engine'
-    end
+    @env.register_postprocessor 'text/css', FailPostProcessor
   end
 
   after :each do
     @root.destroy!
   end
-
+  
   it 'allow specifying custom sass importer' do
-    @assets.file 'main.css.scss', %(@import "dep";)
-    @assets.file 'dep.css.scss', "$color: blue;\nbody { color: $color; }"
+    @assets.file 'main.css.scss', %(@import "dep")
+    @assets.file '_dep.css.scss', "$color: blue;\nbody { color: $color; }"
     @env['main.css']
 
     expect(@custom_importer.has_been_used).to be_truthy
