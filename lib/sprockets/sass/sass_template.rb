@@ -37,7 +37,7 @@ module Sprockets
               raise Encoding::InvalidByteSequenceError, "#{filename} is not valid #{data.encoding}"
             end
           end
-          ::Sass::Engine.new(data, sass_options(filename, context).merge(syntax: self.syntax, line: 1, filename: filename)).render
+          ::Sass::Engine.new(data, sass_options(filename, context)).render
         rescue ::Sass::SyntaxError => e
           # Annotates exception message with parse line number
           context.__LINE__ = e.sass_backtrace.first[:line]
@@ -54,9 +54,6 @@ module Sprockets
         context.metadata.merge(data: result)
       end
 
-      def self.prepare_data_for_sass_engine(filename, source, context)
-        Tilt::SassTemplate.new(filename, sass_options(filename).merge(syntax: self.syntax)).render
-      end
 
       def self.read_template_file(file)
         data = File.open(file, 'rb') { |io| io.read }
