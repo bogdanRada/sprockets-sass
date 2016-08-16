@@ -5,6 +5,31 @@ module Sprockets
       def initialize(filename, &block)
         @filename = filename
         @source   = block.call
+        initialize_engine
+      end
+
+      @sass_functions_initialized = false
+      class << self
+        attr_accessor :sass_functions_initialized
+         alias :sass_functions_initialized? :sass_functions_initialized
+        # Templates are initialized once the functions are added.
+        def engine_initialized?
+          sass_functions_initialized?
+        end
+      end
+
+      # Add the Sass functions if they haven't already been added.
+      def initialize_engine
+         return if self.class.engine_initialized?
+
+        if Sass.add_sass_functions != false
+          begin
+            require 'sprockets/helpers'
+            require 'sprockets/sass/functions'
+          rescue LoadError; end
+        end
+
+        self.class.sass_functions_initialized = true
       end
 
       def render(context, empty_hash_wtf)
@@ -22,34 +47,18 @@ module Sprockets
 
       def self.run(filename, source, context)
         begin
-          default_encoding = options.delete :default_encoding
-
-          # load template data and prepare (uses binread to avoid encoding issues)
-          data = read_template_file(filename)
-
-          if data.respond_to?(:force_encoding)
-            if default_encoding
-              data = data.dup if data.frozen?
-              data.force_encoding(default_encoding)
-            end
-
-            if !data.valid_encoding?
-              raise Encoding::InvalidByteSequenceError, "#{filename} is not valid #{data.encoding}"
-            end
-          end
-          ::Sass::Engine.new(data, sass_options(filename, context)).render
+          Tilt::SassTemplate.new(filename, sass_options(filename, context)).render(self)
         rescue ::Sass::SyntaxError => e
           # Annotates exception message with parse line number
           context.__LINE__ = e.sass_backtrace.first[:line]
           raise e
         end
       end
-
+      
       def self.call(input)
         filename = input[:filename]
         source   = input[:data]
         context  = input[:environment].context_class.new(input)
-
         result = run(filename, source, context)
         context.metadata.merge(data: result)
       end
@@ -99,6 +108,10 @@ module Sprockets
         }
       end
 
+      def self.syntax_file(path)
+        path.to_s.include?('.sass') ? :sass : :scss
+      end
+
       def self.sass_options(filename, context)
         # Allow the use of custom SASS importers, making sure the
         # custom importer is a `Sprockets::Sass::Importer`
@@ -112,7 +125,7 @@ module Sprockets
         merge_sass_options(default_sass_options, options).merge(
         :filename    => filename,
         :line        => 1,
-        :syntax      => syntax,
+        :syntax      => syntax_file(filename) || syntax,
         :cache_store => cache_store(context),
         :importer    => importer,
         :custom      => { :sprockets_context => context }
