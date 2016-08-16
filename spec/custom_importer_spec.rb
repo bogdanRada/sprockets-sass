@@ -18,10 +18,10 @@ describe Sprockets::Sass::SassTemplate do
   after :each do
     @root.destroy!
   end
-  
+
   it 'allow specifying custom sass importer' do
     @assets.file 'main.css.scss', %(@import "dep")
-    @assets.file '_dep.css.scss', "$color: blue;\nbody { color: $color; }"
+    @assets.file 'dep.css.scss', "$color: blue;\nbody { color: $color; }"
     @env['main.css']
 
     expect(@custom_importer.has_been_used).to be_truthy

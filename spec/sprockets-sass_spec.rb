@@ -14,9 +14,9 @@ describe Sprockets::Sass do
   end
 
   it 'processes scss files normally' do
-    @assets.file 'main.css.scss', '//= require dep'
-    @assets.file 'dep.css.scss', 'body { color: blue; }'
-    asset = @env['main']
+    @assets.file 'main.css.scss', '//= require "dep.css"'
+    @assets.file 'dep.css.scss', 'body{ color: blue; }'
+    asset = @env['main.css']
     expect(asset.to_s).to eql("body {\n  color: blue; }\n")
   end
 
@@ -33,7 +33,7 @@ describe Sprockets::Sass do
     asset = @env['main.css']
     expect(asset.to_s).to eql("body {\n  color: blue; }\n")
   end
-
+  
   it 'imports standard files' do
     @assets.file 'main.css.scss', %(@import "dep";\nbody { color: $color; })
     @assets.file 'dep.css.scss', '$color: blue;'
@@ -394,6 +394,6 @@ describe Sprockets::Sass do
         expect(Sprockets::Sass::SassTemplate.engine_initialized?).to be_truthy
         Sprockets::Sass.add_sass_functions = true
       end
-    end
+   end
   end
 end

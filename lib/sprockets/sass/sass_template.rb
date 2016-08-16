@@ -47,22 +47,23 @@ module Sprockets
 
       def self.run(filename, source, context)
         begin
-          default_encoding = options.delete :default_encoding
-
-          # load template data and prepare (uses binread to avoid encoding issues)
-          data = read_template_file(filename)
-
-          if data.respond_to?(:force_encoding)
-            if default_encoding
-              data = data.dup if data.frozen?
-              data.force_encoding(default_encoding)
-            end
-
-            if !data.valid_encoding?
-              raise Encoding::InvalidByteSequenceError, "#{filename} is not valid #{data.encoding}"
-            end
-          end
-          ::Sass::Engine.new(data, sass_options(filename, context)).render
+          # default_encoding = options.delete :default_encoding
+          #
+          # # load template data and prepare (uses binread to avoid encoding issues)
+          # data = read_template_file(filename)
+          #
+          # if data.respond_to?(:force_encoding)
+          #   if default_encoding
+          #     data = data.dup if data.frozen?
+          #     data.force_encoding(default_encoding)
+          #   end
+          #
+          #   if !data.valid_encoding?
+          #     raise Encoding::InvalidByteSequenceError, "#{filename} is not valid #{data.encoding}"
+          #   end
+          # end
+          # ::Sass::Engine.new(data, sass_options(filename, context)).render
+          Tilt::SassTemplate.new(filename, sass_options(filename, context)).render(self)
         rescue ::Sass::SyntaxError => e
           # Annotates exception message with parse line number
           context.__LINE__ = e.sass_backtrace.first[:line]

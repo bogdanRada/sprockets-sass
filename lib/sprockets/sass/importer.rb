@@ -78,7 +78,7 @@ module Sprockets
       # style paths.
       def resolve(context, path, base_path)
        possible_files(context, path, base_path).each do |file|
-          context.resolve(file) { |found| return found if context.asset_requirable?(found) }
+          context.resolve(file.to_s) { |found| return found if context.asset_requirable?(found) }
         end
 
         nil
