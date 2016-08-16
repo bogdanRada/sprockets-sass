@@ -19,13 +19,21 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
 
   s.add_dependency             'sprockets',         '>= 2.0', '< 4.0'
-  s.add_dependency             'tilt',              '~> 1.1'
-  s.add_development_dependency 'appraisal',         '~> 0.5'
+  s.add_dependency             'tilt',              '>= 1.1'
+
   s.add_development_dependency 'rspec',             '~> 2.13'
   s.add_development_dependency 'test_construct',    '~> 2.0'
   s.add_development_dependency 'sprockets-helpers', '~> 1.0'
-  s.add_development_dependency 'sass',              '~> 3.3'
-  s.add_development_dependency 'compass',           '~> 1.0.0.alpha.19'
-  s.add_development_dependency 'rake'
+  s.add_development_dependency 'sass',              '~> 3.4'
+  s.add_development_dependency 'compass',           '~> 1.0', '>= 1.0.3'
   s.add_development_dependency 'pry'
+
+  s.add_development_dependency 'appraisal', '~> 2.1', '>= 2.1'
+  s.add_development_dependency 'simplecov', '~> 0.12', '>= 0.12'
+  s.add_development_dependency 'simplecov-summary', '~> 0.0.5', '>= 0.0.5'
+  s.add_development_dependency 'rake', '>= 10.5', '>= 10.5'
+  s.add_development_dependency 'yard', '~> 0.8', '>= 0.8'
+  s.add_development_dependency 'redcarpet', '~> 3.3', '>= 3.3'
+  s.add_development_dependency 'github-markup', '~> 1.4', '>= 1.4'
+  s.add_development_dependency 'inch', '~> 0.7', '>= 0.7.1'
 end
