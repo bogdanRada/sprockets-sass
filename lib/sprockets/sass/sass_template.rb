@@ -54,7 +54,7 @@ module Sprockets
           raise e
         end
       end
-      
+
       def self.call(input)
         filename = input[:filename]
         source   = input[:data]
@@ -125,7 +125,7 @@ module Sprockets
         merge_sass_options(default_sass_options, options).merge(
         :filename    => filename,
         :line        => 1,
-        :syntax      => syntax_file(filename) || syntax,
+        :syntax      => syntax,
         :cache_store => cache_store(context),
         :importer    => importer,
         :custom      => { :sprockets_context => context }

@@ -16,7 +16,7 @@ module Sprockets
     autoload :CacheStore, 'sprockets/sass/cache_store'
     autoload :Compressor, 'sprockets/sass/compressor'
     autoload :Importer,   'sprockets/sass/importer'
-    
+
     class << self
       # Global configuration for `Sass::Engine` instances.
       attr_accessor :options
@@ -34,11 +34,17 @@ module Sprockets
   if respond_to?(:register_transformer)
     require 'sprockets/processing'
     extend Sprockets::Processing
+    register_mime_type 'text/css', extensions: ['.sass'], charset: :css
+    register_mime_type 'text/css', extensions: ['.scss'], charset: :css
     register_preprocessor 'text/sass',Sprockets::Sass::SassTemplate
     register_preprocessor 'text/scss', Sprockets::Sass::ScssTemplate
   else
-    register_engine '.sass', Sprockets::Sass::SassTemplate
-    register_engine '.scss', Sprockets::Sass::ScssTemplate
+    args = ['.sass', Sprockets::Sass::SassTemplate]
+    args << { mime_type: 'text/css', silence_deprecation: true } if Sprockets::VERSION.start_with?("3")
+    register_engine(*args)
+    args = ['.scss', Sprockets::Sass::ScssTemplate]
+    args << { mime_type: 'text/css', silence_deprecation: true } if Sprockets::VERSION.start_with?("3")
+    register_engine(*args)
   end
 
 end

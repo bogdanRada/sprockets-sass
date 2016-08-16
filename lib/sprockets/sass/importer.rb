@@ -50,7 +50,8 @@ module Sprockets
         ::Sass::Engine.new evaluate(context, pathname), options.merge(
           :filename => pathname.to_s,
           :syntax   => syntax(pathname),
-          :importer => self
+          :importer => self,
+          :custom      => { :sprockets_context => context }
         )
       end
 
@@ -63,6 +64,7 @@ module Sprockets
           relative_path = path.relative_path_from Pathname.new(base_path).dirname
           imports << %(@import "#{relative_path}";\n)
         end
+      #  puts ['engine_from_glob', glob, base_path, context, imports].inspect
         return nil if imports.empty?
         ::Sass::Engine.new imports, options.merge(
           :filename => base_path.to_s,
@@ -75,7 +77,7 @@ module Sprockets
       # we make Sprockets behave like Sass, and import partial
       # style paths.
       def resolve(context, path, base_path)
-        possible_files(context, path, base_path).each do |file|
+       possible_files(context, path, base_path).each do |file|
           context.resolve(file) { |found| return found if context.asset_requirable?(found) }
         end
 
@@ -134,7 +136,7 @@ module Sprockets
       def evaluate(context, path)
         attributes = context.environment.attributes_for(path)
         processors = context.environment.preprocessors(attributes.content_type) + attributes.engines.reverse
-        processors.delete_if { |processor| processor < Sprockets::Sass::SassTemplate }
+        processors.delete_if { |processor| processor < Sprockets::Sass::SassTemplate || processor == Sprockets::Sass::SassTemplate }
         context.evaluate(path, :processors => processors)
       end
     end

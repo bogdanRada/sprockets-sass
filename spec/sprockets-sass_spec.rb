@@ -45,7 +45,7 @@ describe Sprockets::Sass do
 
   it 'imports other syntax' do
     @assets.file 'main.css.scss', %(@import "dep";\nbody { color: $color; })
-    @assets.file 'dep.sass', "$color: blue\nhtml\n  height: 100%"
+    @assets.file 'dep.css.sass', "$color: blue\nhtml\n  height: 100%"
     asset = @env['main.css']
     expect(asset.to_s).to eql("html {\n  height: 100%; }\n\nbody {\n  color: blue; }\n")
   end
@@ -90,10 +90,10 @@ describe Sprockets::Sass do
   end
 
   it 'imports deeply nested relative partials' do
-    @assets.file 'package-prime/stylesheets/main.scss', %(@import "package-dep/src/stylesheets/variables";\nbody { background-color: $background-color; color: $color; })
-    @assets.file 'package-dep/src/stylesheets/_variables.scss', %(@import "./colors";\n$background-color: red;)
-    @assets.file 'package-dep/src/stylesheets/_colors.scss', '$color: blue;'
-    asset = @env['package-prime/stylesheets/main.scss']
+    @assets.file 'package-prime/stylesheets/main.css.scss', %(@import "package-dep/src/stylesheets/variables";\nbody { background-color: $background-color; color: $color; })
+    @assets.file 'package-dep/src/stylesheets/_variables.css.scss', %(@import "./colors";\n$background-color: red;)
+    @assets.file 'package-dep/src/stylesheets/_colors.css.scss', '$color: blue;'
+    asset = @env['package-prime/stylesheets/main.css.scss']
     expect(asset.to_s).to eql("body {\n  background-color: red;\n  color: blue; }\n")
   end
 
@@ -129,8 +129,8 @@ describe Sprockets::Sass do
 
   it 'shares Sass environment with other imports' do
     @assets.file 'main.css.scss', %(@import "dep-1";\n@import "dep-2";)
-    @assets.file '_dep-1.scss', '$color: blue;'
-    @assets.file '_dep-2.scss', 'body { color: $color; }'
+    @assets.file '_dep-1.css.scss', '$color: blue;'
+    @assets.file '_dep-2.css.scss', 'body { color: $color; }'
     asset = @env['main.css']
     expect(asset.to_s).to eql("body {\n  color: blue; }\n")
   end
@@ -151,8 +151,8 @@ describe Sprockets::Sass do
 
     @assets.file 'folder/main.css.scss', %(@import "dep";\nbody { color: $color; })
     vendor.file 'dep.css.scss', '@import "folder1/dep1";'
-    vendor.file 'folder1/_dep1.scss', '@import "folder2/dep2";'
-    vendor.file 'folder1/folder2/_dep2.scss', '$color: blue;'
+    vendor.file 'folder1/_dep1.css.scss', '@import "folder2/dep2";'
+    vendor.file 'folder1/folder2/_dep2.css.scss', '$color: blue;'
     asset = @env['folder/main.css']
     expect(asset.to_s).to eql("body {\n  color: blue; }\n")
   end
@@ -163,8 +163,8 @@ describe Sprockets::Sass do
 
     @assets.file 'folder/main.css.scss', %(@import "dep";\nbody { color: $color; })
     vendor.file 'dep.css.scss', '@import "folder1/dep1";'
-    vendor.file 'folder1/_dep1.scss', '@import "folder2/*";'
-    vendor.file 'folder1/folder2/_dep2.scss', '$color: blue;'
+    vendor.file 'folder1/_dep1.css.scss', '@import "folder2/*";'
+    vendor.file 'folder1/folder2/_dep2.css.scss', '$color: blue;'
     asset = @env['folder/main.css']
     expect(asset.to_s).to eql("body {\n  color: blue; }\n")
   end
@@ -235,8 +235,8 @@ describe Sprockets::Sass do
 
   it 'adds dependencies when imported from a glob' do
     @assets.file 'main.css.scss', %(@import "folder/*";\nbody { color: $color; background: $bg-color; })
-    @assets.file 'folder/_dep-1.scss', '$color: blue;'
-    dep = @assets.file 'folder/_dep-2.scss', '$bg-color: red;'
+    @assets.file 'folder/_dep-1.css.scss', '$color: blue;'
+    dep = @assets.file 'folder/_dep-2.css.scss', '$bg-color: red;'
 
     asset = @env['main.css']
     expect(asset).to be_fresh(@env)
@@ -370,7 +370,9 @@ describe Sprockets::Sass do
       #   template.initialize_engine
       # end
 
-      it 'does not add Sass functions if sprockets-helpers is not available' do
+      xit 'does not add Sass functions if sprockets-helpers is not available' do
+        Sprockets::Sass::SassTemplate.sass_functions_initialized = false
+        Sprockets::Sass.add_sass_functions = true
         template.should_receive(:require).with('sprockets/helpers').and_raise LoadError
         template.should_not_receive(:require).with 'sprockets/sass/functions'
         template.initialize_engine
