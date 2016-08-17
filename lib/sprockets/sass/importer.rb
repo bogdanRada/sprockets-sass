@@ -81,7 +81,7 @@ module Sprockets
         if Sprockets::Sass.version_of_sprockets >= 3
           possible_files(context, path, base_path).each do |file|
             found_item  = context.resolve(file.to_s, load_paths: context.environment.paths, base_path: base_path , accept: syntax_mime_type(file)) rescue nil
-            return found_item if !found_item.nil?
+            return found_item if !found_item.nil? && asset_requirable?(context, found_item)
           end
         else
           possible_files(context, path, base_path).each do |file|
@@ -94,13 +94,22 @@ module Sprockets
         nil
       end
 
+      def asset_requirable?(context, path)
+      pathname = context.resolve(path)
+      content_type = syntax_mime_type(path)
+      stat = context.environment.stat(path)
+      return false unless stat && stat.file?
+      true
+    end
+
       # Finds all of the assets using the given glob.
       def resolve_glob(context, glob, base_path)
         base_path      = Pathname.new(base_path)
         path_with_glob = base_path.dirname.join(glob).to_s
 
         Pathname.glob(path_with_glob).sort.select do |path|
-          resolve(context, path, base_path)
+          asset_requirable =  context.respond_to?(:asset_requirable?) ? context.asset_requirable?(path) : asset_requirable?(context, path)
+           path != context.pathname && asset_requirable
         end
       end
 
