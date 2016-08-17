@@ -220,8 +220,11 @@ module Sprockets
         content_type = attributes.respond_to?(:content_type) ? attributes.content_type : attributes[1]
         engines = attributes.respond_to?(:engines) ? attributes.engines : []
         preprocessors =  Sprockets::Sass.version_of_sprockets >= 3 ? context.environment.preprocessors[content_type].map {|a| a.class } : context.environment.preprocessors(content_type)
-        processors =  preprocessors + engines.reverse
-        processors.delete_if { |processor| filtered_processor_classes.include?(processor) || filtered_processor_classes.any?{|filtered_processor| processor < filtered_processor  } }
+        available_transformers = context.environment.respond_to?(:transformers) ?  context.environment.transformers["application/#{syntax(path)}+ruby"] : {}
+        additional_transformers = available_transformers.key?(syntax_mime_type(path)) ? available_transformers[syntax_mime_type(path)] : []
+        additional_transformers = additional_transformers.is_a?(Array) ? additional_transformers : [additional_transformers]
+        processors =  additional_transformers.reverse + preprocessors + engines.reverse
+        processors.delete_if { |processor|  filtered_processor_classes.include?(processor) || filtered_processor_classes.any?{|filtered_processor| !processor.is_a?(Proc)  && processor < filtered_processor  } }
         context.respond_to?(:evaluate) ? context.evaluate(path, :processors => processors) : process(processors, context , path)
       end
     end

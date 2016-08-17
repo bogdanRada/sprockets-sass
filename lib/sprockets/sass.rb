@@ -37,6 +37,11 @@ module Sprockets
     require 'sprockets/sassc_processor'
   rescue LoadError; end
 
+  if Sprockets::Sass.version_of_sprockets >= 3
+    register_mime_type 'application/scss+ruby', extensions: ['.scss.erb', '.css.scss.erb']
+    register_mime_type 'application/sass+ruby', extensions: ['.sass.erb', '.css.sass.erb']
+  end
+
   if respond_to?(:register_engine)
     args = ['.sass', Sprockets::Sass::SassTemplate]
     args << { mime_type: 'text/css', extensions: ['.sass', '.css.sass'],  silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
@@ -44,11 +49,17 @@ module Sprockets
     args = ['.scss', Sprockets::Sass::ScssTemplate]
     args << { mime_type: 'text/css', extensions: ['.scss', '.css.scss'], silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
     register_engine(*args)
+    if respond_to?(:register_transformer)
+      register_transformer 'application/scss+ruby', 'text/css', Sprockets::ERBProcessor
+      register_transformer 'application/sass+ruby', 'text/css', Sprockets::ERBProcessor
+    end
   else
     require 'sprockets/processing'
     extend Sprockets::Processing
     register_mime_type 'text/sass', extensions: ['.sass', '.css.sass']
     register_mime_type 'text/scss', extensions: ['.scss', '.css.scss']
+    register_transformer 'application/scss+ruby', 'text/scss', Sprockets::ERBProcessor
+    register_transformer 'application/sass+ruby', 'text/sass', Sprockets::ERBProcessor
     register_preprocessor 'text/sass',  Sprockets::Sass::SassTemplate
     register_preprocessor 'text/scss',  Sprockets::Sass::ScssTemplate
   end
