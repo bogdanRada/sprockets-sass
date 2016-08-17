@@ -121,10 +121,15 @@ module Sprockets
         base_name = path.basename
         partial_path = partialize_path(path)
         additional_paths = [Pathname.new("#{base_name}.css"),  Pathname.new("#{partial_path}.css")]
-        paths     = additional_paths.concat(["#{path}", "#{partial_path}" ])
+        initial_paths = additional_paths.concat(["#{path}", "#{partial_path}" ])
+        paths = initial_paths
 
         if Sprockets::Sass.version_of_sprockets >= 3
-          paths = paths.map {|path| path.to_s.start_with?('.') || path.to_s.include?('*') ? path : Pathname.new(path.to_s.prepend('./')) }
+          paths = paths.map {|path_detected| path_detected.to_s.start_with?('.') ? path_detected : Pathname.new(path_detected.to_s.prepend('./')) }
+          file_level = path.to_s.split(File::SEPARATOR).size
+          file_level.times do
+            paths = paths.concat(paths.map {|a| Pathname.new(a.to_s.prepend('../')) })
+          end
         end
         # Find base_path's root
         env_root_paths = context.environment.paths.map {|p| Pathname.new(p) }
