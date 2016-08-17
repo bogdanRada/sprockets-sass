@@ -139,8 +139,8 @@ module Sprockets
           #  Tilt::SassTemplate.new(filename, sass_options(filename, context)).render(self)
         rescue ::Sass::SyntaxError => e
           # Annotates exception message with parse line number
-          context.__LINE__ = e.sass_backtrace.first[:line]
-          raise [e, e.backtrace].join("\n")
+          #context.__LINE__ = e.sass_backtrace.first[:line]
+          raise [e, e.sass_backtrace].join("\n")
         end
       end
 

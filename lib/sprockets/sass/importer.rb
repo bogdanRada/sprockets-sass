@@ -168,17 +168,18 @@ module Sprockets
        #
        # Returns Hash.
        def process(processors, context, path)
-         data = nil
+         data, metadata = Sprockets::Sass::Utils.read_template_file(path.to_s), {}
 
          input = {
            environment: context,
            filename: path.to_s,
+           uri: path.to_s,
            content_type: syntax_mime_type(path),
          }
-
+         
          processors.each do |processor|
            begin
-             result = processor.call(input.merge(data: data))
+             result = processor.call(input.merge(data: data, metadata: metadata))
              case result
              when NilClass
                # noop
