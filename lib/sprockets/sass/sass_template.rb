@@ -115,11 +115,11 @@ module Sprockets
 
           engine = ::Sass::Engine.new(data, sass_options)
 
-          if defined?(::Sass::Script::Functions)
-            css = Sprockets::Sass::Utils.module_include(::Sass::Script::Functions, @functions) do
-              engine.render
-            end
-          else
+           if Sprockets::Sass.version_of_sprockets >= 3
+             css = Sprockets::Sass::Utils.module_include(::Sass::Script::Functions, @functions) do
+               engine.render
+             end
+           else
             css = engine.render
           end
 
@@ -231,7 +231,6 @@ module Sprockets
         :custom      => { :sprockets_context => context },
         sprockets: sprockets_options
         )
-        sass[:load_paths] = sass[:load_paths].concat([importer.class])
         sass
       end
 

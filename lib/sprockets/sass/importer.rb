@@ -46,7 +46,7 @@ module Sprockets
       # Create a Sass::Engine from the given path.
       def engine_from_path(path, base_path, options)
         context = options[:custom][:sprockets_context]
-        pathname = resolve(context, path, base_path)
+        pathname = resolve(context, path, base_path) or return nil
         context.depend_on pathname
         ::Sass::Engine.new evaluate(context, pathname), options.merge(
         :filename => pathname.to_s,
@@ -111,8 +111,12 @@ module Sprockets
         base_path = Pathname.new(base_path).dirname
         base_name = path.basename
         partial_path = partialize_path(path)
-        additional_paths = [Pathname.new("./#{base_name}.css"),  Pathname.new("./#{partial_path}.css")]
-        paths     = additional_paths.concat(["./#{path}", "./#{partial_path}" ])
+        additional_paths = [Pathname.new("#{base_name}.css"),  Pathname.new("#{partial_path}.css")]
+        paths     = additional_paths.concat(["#{path}", "#{partial_path}" ])
+
+        if Sprockets::Sass.version_of_sprockets >= 3
+          paths = paths.map {|path| path.to_s.start_with?('.') ? path : Pathname.new(path.to_s.prepend('./')) }
+        end
         # Find base_path's root
         env_root_paths = context.environment.paths.map {|p| Pathname.new(p) }
         root_path = env_root_paths.detect do |env_root_path|
