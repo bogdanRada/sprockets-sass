@@ -4,15 +4,8 @@ require 'sprockets/sass/version'
 require 'sprockets/sass/utils'
 require 'sprockets/sass/sass_template'
 require 'sprockets/sass/scss_template'
-
-
-# require 'tilt'
-# Tilt::SassTemplate.class_eval do
-#   alias_method :original_sass_options, :sass_options
-#   def sass_options
-#     options.merge(:filename => eval_file, :line => line, :syntax => options[:syntax] || :sass)
-#   end
-# end
+require 'sass'
+require 'sass/tree/import_node'
 
 module Sprockets
   module Sass
@@ -28,6 +21,11 @@ module Sprockets
       # sprockets-helpers will not be added as Sass functions.
       # `true` by default.
       attr_accessor :add_sass_functions
+
+      def version_of_sprockets
+        Sprockets::VERSION.split('.')[0].to_i
+      end
+
     end
 
     @options = {}
@@ -41,10 +39,10 @@ module Sprockets
 
   if respond_to?(:register_engine)
     args = ['.sass', Sprockets::Sass::SassTemplate]
-    args << { mime_type: 'text/css', silence_deprecation: true } if Sprockets::VERSION.start_with?("3")
+    args << { mime_type: 'text/css', extensions: ['.sass', '.css.sass'],  silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
     register_engine(*args)
     args = ['.scss', Sprockets::Sass::ScssTemplate]
-    args << { mime_type: 'text/css', silence_deprecation: true } if Sprockets::VERSION.start_with?("3")
+    args << { mime_type: 'text/css', extensions: ['.scss', '.css.scss'], silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
     register_engine(*args)
   else
     require 'sprockets/processing'

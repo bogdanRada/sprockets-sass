@@ -35,6 +35,9 @@ module Sprockets
           @filename = options[:filename]
           @source = options[:data]
           @options = options.merge(default_options)
+          @importer_class = options[:importer]
+          @sass_config = options[:sass_config] || {}
+          @input = options
           @functions = Module.new do
             include Sprockets::SassProcessor::Functions
             include Sprockets::Helpers
@@ -76,6 +79,7 @@ module Sprockets
       end
 
       def call(input)
+        @input = input
         @filename = input[:filename]
         @source   = input[:data]
         @context  = input[:environment].context_class.new(input)
@@ -107,16 +111,17 @@ module Sprockets
               raise Encoding::InvalidByteSequenceError, "#{filename} is not valid #{data.encoding}"
             end
           end
+
+
           engine = ::Sass::Engine.new(data, sass_options)
 
-          if self.class.engine_initialized?
-            css = engine.render
-          else
+          if defined?(::Sass::Script::Functions)
             css = Sprockets::Sass::Utils.module_include(::Sass::Script::Functions, @functions) do
               engine.render
             end
+          else
+            css = engine.render
           end
-
 
           sass_dependencies = Set.new([filename])
           if context.respond_to?(:metadata)
@@ -135,7 +140,7 @@ module Sprockets
         rescue ::Sass::SyntaxError => e
           # Annotates exception message with parse line number
           context.__LINE__ = e.sass_backtrace.first[:line]
-          raise [e, e.backtrace].inspect
+          raise [e, e.backtrace].join("\n")
         end
       end
 
@@ -164,15 +169,19 @@ module Sprockets
         if (load_paths = options[:load_paths]) && (other_paths = other_options[:load_paths])
           other_options[:load_paths] = other_paths + load_paths
         end
-        options.merge other_options
+        options = options.merge(other_options)
+        options[:load_paths] = options[:load_paths].concat(context.environment.paths)
+        options
       end
 
       def default_sass_options
         if defined?(Compass)
-          merge_sass_options Compass.sass_engine_options.dup, Sprockets::Sass.options
+          sass = merge_sass_options Compass.sass_engine_options.dup, Sprockets::Sass.options
         else
-          Sprockets::Sass.options.dup
+          sass = Sprockets::Sass.options.dup
         end
+        sass = merge_sass_options(sass.dup, @sass_config) if defined?(@sass_config) && @sass_config.is_a?(Hash)
+        sass
       end
 
 
@@ -196,8 +205,9 @@ module Sprockets
       def sass_options
         # Allow the use of custom SASS importers, making sure the
         # custom importer is a `Sprockets::Sass::Importer`
-        if default_sass_options.has_key?(:importer) &&
-          default_sass_options[:importer].is_a?(Importer)
+        if defined?(@importer_class) && !@importer_class.nil?
+          importer = @importer_class
+        elsif default_sass_options.key?(:importer) && default_sass_options[:importer].is_a?(Importer)
           importer = default_sass_options[:importer]
         else
           importer = Sprockets::Sass::Importer.new
@@ -209,10 +219,10 @@ module Sprockets
           dependencies: context.respond_to?(:metadata) ? context.metadata[:dependencies] : []
         }
         if context.respond_to?(:metadata)
-          sprockets_options.merge(load_paths: context.environment.paths )
+          sprockets_options.merge(load_paths: context.environment.paths + default_sass_options[:load_paths] )
         end
 
-        merge_sass_options(default_sass_options, options).merge(
+        sass = merge_sass_options(default_sass_options, options).merge(
         :filename    => filename,
         :line        => 1,
         :syntax      => self.class.syntax,
@@ -221,6 +231,8 @@ module Sprockets
         :custom      => { :sprockets_context => context },
         sprockets: sprockets_options
         )
+        sass[:load_paths] = sass[:load_paths].concat([importer.class])
+        sass
       end
 
 

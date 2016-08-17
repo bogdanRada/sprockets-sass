@@ -6,12 +6,13 @@ module Sprockets
     class Importer < ::Sass::Importers::Base
       GLOB = /\*|\[.+\]/
 
+
       # @see Sass::Importers::Base#find_relative
       def find_relative(path, base_path, options)
         if path.to_s =~ GLOB
           engine_from_glob(path, base_path, options)
         else
-          engine_from_path(path, base_path, options)
+         engine_from_path(path, base_path, options)
         end
       end
 
@@ -37,7 +38,7 @@ module Sprockets
 
       # @see Sass::Importers::Base#to_s
       def to_s
-        "#{self.class.name}:#{context.pathname}"
+        self.inspect
       end
 
       protected
@@ -45,7 +46,7 @@ module Sprockets
       # Create a Sass::Engine from the given path.
       def engine_from_path(path, base_path, options)
         context = options[:custom][:sprockets_context]
-        pathname = resolve(context, path, base_path) or return nil
+        pathname = resolve(context, path, base_path)
         context.depend_on pathname
         ::Sass::Engine.new evaluate(context, pathname), options.merge(
         :filename => pathname.to_s,
@@ -64,7 +65,6 @@ module Sprockets
           relative_path = path.relative_path_from Pathname.new(base_path).dirname
           imports << %(@import "#{relative_path}";\n)
         end
-        #  puts ['engine_from_glob', glob, base_path, context, imports].inspect
         return nil if imports.empty?
         ::Sass::Engine.new imports, options.merge(
         :filename => base_path.to_s,
@@ -78,8 +78,17 @@ module Sprockets
       # we make Sprockets behave like Sass, and import partial
       # style paths.
       def resolve(context, path, base_path)
-        possible_files(context, path, base_path).each do |file|
-          context.resolve(file.to_s) { |found| return found if context.asset_requirable?(found) }
+        if Sprockets::Sass.version_of_sprockets >= 3
+          found_item = possible_files(context, path, base_path).find do |file|
+            context.resolve(file.to_s, load_paths: context.environment.paths, base_path: base_path , accept: syntax_mime_type(file)) rescue nil
+          end
+         return found_item if !found_item.nil?
+        else
+          possible_files(context, path, base_path).each do |file|
+            context.resolve(file.to_s) do  |found|
+              return found if context.asset_requirable?(found)
+            end
+          end
         end
 
         nil
@@ -100,21 +109,21 @@ module Sprockets
       def possible_files(context, path, base_path)
         path      = Pathname.new(path)
         base_path = Pathname.new(base_path).dirname
-        paths     = [ path, partialize_path(path) ]
-
+        base_name = path.basename
+        partial_path = partialize_path(path)
+        additional_paths = [Pathname.new("./#{base_name}.css"),  Pathname.new("./#{partial_path}.css")]
+        paths     = additional_paths.concat(["./#{path}", "./#{partial_path}" ])
         # Find base_path's root
         env_root_paths = context.environment.paths.map {|p| Pathname.new(p) }
         root_path = env_root_paths.detect do |env_root_path|
           base_path.to_s.start_with?(env_root_path.to_s)
         end
         root_path ||= Pathname.new(context.root_path)
-
         # Add the relative path from the root, if necessary
         if path.relative? && base_path != root_path
           relative_path = base_path.relative_path_from(root_path).join path
           paths.unshift(relative_path, partialize_path(relative_path))
         end
-
         paths.compact
       end
 
@@ -131,8 +140,13 @@ module Sprockets
         path.to_s.include?('.sass') ? :sass : :scss
       end
 
+      def syntax_mime_type(path)
+        mime_type = Sprockets.respond_to?(:register_engine) ? 'text/css' : "text/#{syntax(path)}"
+        mime_type
+      end
+
       def filtered_processor_classes
-        classes = [Sprockets::Sass::SassTemplate]
+        classes = [Sprockets::Sass::SassTemplate, Sprockets::Sass::ScssTemplate]
         classes << Sprockets::SassProcessor if defined?(Sprockets::SassProcessor)
         classes << Sprockets::ScssProcessor if defined?(Sprockets::ScssProcessor)
         classes << Sprockets::SasscProcessor if defined?(Sprockets::SasscProcessor)

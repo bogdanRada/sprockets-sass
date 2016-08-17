@@ -22,8 +22,8 @@ describe Sprockets::Sass::SassTemplate do
   it 'allow specifying custom sass importer' do
     @assets.file 'main.css.scss', %(@import "dep")
     @assets.file 'dep.css.scss', "$color: blue;\nbody { color: $color; }"
-    @env['main.css']
-
+    asset = @env['main.css']
+     expect(asset.to_s).to eql("body {\n  color: blue; }\n")
     expect(@custom_importer.has_been_used).to be_truthy
   end
 
