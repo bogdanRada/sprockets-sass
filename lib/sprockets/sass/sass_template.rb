@@ -2,6 +2,9 @@ module Sprockets
   module Sass
     class SassTemplate
 
+
+
+
       def initialize(filename, &block)
         @filename = filename
         @source   = block.call
@@ -63,7 +66,7 @@ module Sprockets
             end
           end
           ::Sass::Engine.new(data, sass_options(filename, context)).render
-        #  Tilt::SassTemplate.new(filename, sass_options(filename, context)).render(self)
+          #  Tilt::SassTemplate.new(filename, sass_options(filename, context)).render(self)
         rescue ::Sass::SyntaxError => e
           # Annotates exception message with parse line number
           context.__LINE__ = e.sass_backtrace.first[:line]
@@ -120,7 +123,7 @@ module Sprockets
 
       def self.options
         {
-          default_encoding: 'utf-8'
+          default_encoding: Encoding.default_external || 'utf-8'
         }
       end
 
@@ -144,6 +147,7 @@ module Sprockets
         :cache_store => cache_store(context),
         :importer    => importer,
         :custom      => { :sprockets_context => context }
+
         )
       end
 
