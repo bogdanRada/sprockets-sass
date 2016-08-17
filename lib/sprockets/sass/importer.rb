@@ -178,7 +178,6 @@ module Sprockets
       # Returns Hash.
       def process(processors, context, path)
         data = Sprockets::Sass::Utils.read_template_file(path.to_s)
-
         input = {
           environment: context.environment,
           cache: context.environment.cache,
