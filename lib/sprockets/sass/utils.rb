@@ -3,6 +3,15 @@ module Sprockets
     class  Utils
       class << self
 
+        def read_template_file(file)
+          data = File.open(file, 'rb') { |io| io.read }
+          if data.respond_to?(:force_encoding)
+            # Set it to the default external (without verifying)
+            data.force_encoding(Encoding.default_external) if Encoding.default_external
+          end
+          data
+        end
+
         def module_include(base, mod)
           old_methods = {}
 

@@ -99,7 +99,7 @@ module Sprockets
           default_encoding = options.delete :default_encoding
 
           # load template data and prepare (uses binread to avoid encoding issues)
-          data = read_template_file(filename)
+          data = Sprockets::Sass::Utils.read_template_file(filename)
 
           if data.respond_to?(:force_encoding)
             if default_encoding
@@ -117,7 +117,7 @@ module Sprockets
 
            if Sprockets::Sass.version_of_sprockets >= 3
              css = Sprockets::Sass::Utils.module_include(::Sass::Script::Functions, @functions) do
-               engine.render
+              css = engine.render
              end
            else
             css = engine.render
@@ -144,26 +144,6 @@ module Sprockets
         end
       end
 
-      def read_template_file(file)
-        data = File.open(file, 'rb') { |io| io.read }
-        if data.respond_to?(:force_encoding)
-          # Set it to the default external (without verifying)
-          data.force_encoding(Encoding.default_external) if Encoding.default_external
-        end
-        data
-      end
-
-
-
-
-      def read_template_file(file)
-        data = File.open(file, 'rb') { |io| io.read }
-        if data.respond_to?(:force_encoding)
-          # Set it to the default external (without verifying)
-          data.force_encoding(Encoding.default_external) if Encoding.default_external
-        end
-        data
-      end
 
       def merge_sass_options(options, other_options)
         if (load_paths = options[:load_paths]) && (other_paths = other_options[:load_paths])

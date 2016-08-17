@@ -79,10 +79,10 @@ module Sprockets
       # style paths.
       def resolve(context, path, base_path)
         if Sprockets::Sass.version_of_sprockets >= 3
-          found_item = possible_files(context, path, base_path).find do |file|
-            context.resolve(file.to_s, load_paths: context.environment.paths, base_path: base_path , accept: syntax_mime_type(file)) rescue nil
+         possible_files(context, path, base_path).each do |file|
+            found_item  = context.resolve(file.to_s, load_paths: context.environment.paths, base_path: base_path , accept: syntax_mime_type(file)) rescue nil
+            return found_item if !found_item.nil?
           end
-         return found_item if !found_item.nil?
         else
           possible_files(context, path, base_path).each do |file|
             context.resolve(file.to_s) do  |found|
@@ -139,6 +139,10 @@ module Sprockets
         end
       end
 
+      def opposite_syntax(path)
+        syntax(path) == :sass ? :scss : :sass
+      end
+
       # Returns the Sass syntax of the given path.
       def syntax(path)
         path.to_s.include?('.sass') ? :sass : :scss
@@ -155,18 +159,56 @@ module Sprockets
         classes << Sprockets::ScssProcessor if defined?(Sprockets::ScssProcessor)
         classes << Sprockets::SasscProcessor if defined?(Sprockets::SasscProcessor)
         classes << Sprockets::ScsscProcessor if defined?(Sprockets::ScsscProcessor)
-        #clasess << Sprockets::DirectiveProcessor if defined?(Sprockets::DirectiveProcessor) && Sprockets.respond_to?(:register_transformer)
         classes
       end
+
+
+
+      # Internal: Run processors on filename and data.
+       #
+       # Returns Hash.
+       def process(processors, context, path)
+         data = nil
+
+         input = {
+           environment: context,
+           filename: path.to_s,
+           content_type: syntax_mime_type(path),
+         }
+
+         processors.each do |processor|
+           begin
+             result = processor.call(input.merge(data: data))
+             case result
+             when NilClass
+               # noop
+             when Hash
+               data = result[:data] if result.key?(:data)
+
+             when String
+              data = result
+           else
+               raise Error, "invalid processor return type: #{result.class}"
+             end
+           end
+         end
+
+         data
+       end
+
 
       # Returns the string to be passed to the Sass engine. We use
       # Sprockets to process the file, but we remove any Sass processors
       # because we need to let the Sass::Engine handle that.
-      def evaluate(context, path)
-        attributes = context.environment.attributes_for(path)
-        processors = context.environment.preprocessors(attributes.content_type) + attributes.engines.reverse
+      def evaluate(context,  path)
+      #  return context.environment.load("file://#{path.to_s}?type=#{syntax_mime_type(path)}") unless  context.respond_to?(:evaluate)
+        attributes = context.environment.respond_to?(:attributes_for) ? context.environment.attributes_for(path) : context.environment.send(:parse_path_extnames,path.to_s)
+        content_type = attributes.respond_to?(:content_type) ? attributes.content_type : attributes[1]
+        engines = attributes.respond_to?(:engines) ? attributes.engines : []
+        preprocessors =  Sprockets::Sass.version_of_sprockets >= 3 ? context.environment.preprocessors[content_type].map {|a| a.class } : context.environment.preprocessors(content_type)
+        processors =  preprocessors + engines.reverse
         processors.delete_if { |processor| filtered_processor_classes.include?(processor) || filtered_processor_classes.any?{|filtered_processor| processor < filtered_processor  } }
-        context.evaluate(path, :processors => processors)
+        context.respond_to?(:evaluate) ? context.evaluate(path, :processors => processors) : process(processors, context , path)
       end
     end
   end
