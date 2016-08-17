@@ -1,6 +1,7 @@
 require 'sprockets'
 require 'sprockets/engines'
 require 'sprockets/sass/version'
+require 'sprockets/sass/utils'
 require 'sprockets/sass/sass_template'
 require 'sprockets/sass/scss_template'
 

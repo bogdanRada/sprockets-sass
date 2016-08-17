@@ -2,13 +2,54 @@ module Sprockets
   module Sass
     class SassTemplate
 
+      # Internal: Defines default sass syntax to use. Exposed so the ScssProcessor
+      # may override it.
+      def self.syntax
+        :sass
+      end
+
+      # Public: Return singleton instance with default options.
+      #
+      # Returns SassProcessor object.
+      def self.instance
+        @instance ||= new
+      end
+
+      def self.call(input)
+        instance.call(input)
+      end
 
 
+      def self.cache_key
+        instance.cache_key
+      end
 
-      def initialize(filename, &block)
-        @filename = filename
-        @source   = block.call
+      attr_reader :cache_key, :filename, :source, :context, :options
+
+      def initialize(options = {}, &block)
+        default_options  = { default_encoding: Encoding.default_external || 'utf-8' }
         initialize_engine
+        if options.is_a?(Hash)
+          @cache_version = options[:cache_version]
+          @cache_key = "#{self.class.name}:#{VERSION}:#{Autoload::Sass::VERSION}:#{@cache_version}".freeze
+          @filename = options[:filename]
+          @source = options[:data]
+          @options = options.merge(default_options)
+          @functions = Module.new do
+            include Sprockets::SassProcessor::Functions
+            include Sprockets::Helpers
+            include options[:functions] if options[:functions]
+            class_eval(&block) if block_given?
+          end
+        elsif options.is_a?(String)
+          @filename = options
+          @source = block.call
+          @options = default_options
+          @functions = Module.new do
+            include Sprockets::Sass::Functions
+            include Sprockets::Helpers
+          end
+        end
       end
 
       @sass_functions_initialized = false
@@ -29,26 +70,27 @@ module Sprockets
           begin
             require 'sprockets/helpers'
             require 'sprockets/sass/functions'
+            self.class.sass_functions_initialized = true
           rescue LoadError; end
         end
-
-        self.class.sass_functions_initialized = true
       end
+
+      def call(input)
+        @filename = input[:filename]
+        @source   = input[:data]
+        @context  = input[:environment].context_class.new(input)
+        run
+      end
+
 
       def render(context, empty_hash_wtf)
-        self.class.run(@filename, @source, context)
+        @context = context
+        run
       end
 
-      def self.read_template_file(file)
-        data = File.open(file, 'rb') { |io| io.read }
-        if data.respond_to?(:force_encoding)
-          # Set it to the default external (without verifying)
-          data.force_encoding(Encoding.default_external) if Encoding.default_external
-        end
-        data
-      end
 
-      def self.run(filename, source, context)
+
+      def run
         begin
           default_encoding = options.delete :default_encoding
 
@@ -65,7 +107,30 @@ module Sprockets
               raise Encoding::InvalidByteSequenceError, "#{filename} is not valid #{data.encoding}"
             end
           end
-          ::Sass::Engine.new(data, sass_options(filename, context)).render
+          engine = ::Sass::Engine.new(data, sass_options)
+
+          if self.class.engine_initialized?
+            css = engine.render
+          else
+            css = Sprockets::Sass::Utils.module_include(::Sass::Script::Functions, @functions) do
+              engine.render
+            end
+          end
+
+
+          sass_dependencies = Set.new([filename])
+          if context.respond_to?(:metadata)
+            engine.dependencies.map do |dependency|
+              sass_dependencies << dependency.options[:filename]
+              context.metadata[:dependencies] << Sprockets::URIUtils.build_file_digest_uri(dependency.options[:filename])
+            end
+            context.metadata.merge(data: css, sass_dependencies: sass_dependencies)
+          else
+            css
+          end
+
+
+
           #  Tilt::SassTemplate.new(filename, sass_options(filename, context)).render(self)
         rescue ::Sass::SyntaxError => e
           # Annotates exception message with parse line number
@@ -74,16 +139,7 @@ module Sprockets
         end
       end
 
-      def self.call(input)
-        filename = input[:filename]
-        source   = input[:data]
-        context  = input[:environment].context_class.new(input)
-        result = run(filename, source, context)
-        context.metadata.merge(data: result)
-      end
-
-
-      def self.read_template_file(file)
+      def read_template_file(file)
         data = File.open(file, 'rb') { |io| io.read }
         if data.respond_to?(:force_encoding)
           # Set it to the default external (without verifying)
@@ -92,14 +148,26 @@ module Sprockets
         data
       end
 
-      def self.merge_sass_options(options, other_options)
+
+
+
+      def read_template_file(file)
+        data = File.open(file, 'rb') { |io| io.read }
+        if data.respond_to?(:force_encoding)
+          # Set it to the default external (without verifying)
+          data.force_encoding(Encoding.default_external) if Encoding.default_external
+        end
+        data
+      end
+
+      def merge_sass_options(options, other_options)
         if (load_paths = options[:load_paths]) && (other_paths = other_options[:load_paths])
           other_options[:load_paths] = other_paths + load_paths
         end
         options.merge other_options
       end
 
-      def self.default_sass_options
+      def default_sass_options
         if defined?(Compass)
           merge_sass_options Compass.sass_engine_options.dup, Sprockets::Sass.options
         else
@@ -107,11 +175,9 @@ module Sprockets
         end
       end
 
-      def self.syntax
-        :sass
-      end
 
-      def self.cache_store(context)
+
+      def cache_store(context)
         return nil if context.environment.cache.nil?
 
         if defined?(Sprockets::SassCacheStore)
@@ -121,17 +187,13 @@ module Sprockets
         end
       end
 
-      def self.options
-        {
-          default_encoding: Encoding.default_external || 'utf-8'
-        }
-      end
 
-      def self.syntax_file(path)
+
+      def syntax_file(path)
         path.to_s.include?('.sass') ? :sass : :scss
       end
 
-      def self.sass_options(filename, context)
+      def sass_options
         # Allow the use of custom SASS importers, making sure the
         # custom importer is a `Sprockets::Sass::Importer`
         if default_sass_options.has_key?(:importer) &&
@@ -140,14 +202,24 @@ module Sprockets
         else
           importer = Sprockets::Sass::Importer.new
         end
+
+        sprockets_options = {
+          context: context,
+          environment: context.environment,
+          dependencies: context.respond_to?(:metadata) ? context.metadata[:dependencies] : []
+        }
+        if context.respond_to?(:metadata)
+          sprockets_options.merge(load_paths: context.environment.paths )
+        end
+
         merge_sass_options(default_sass_options, options).merge(
         :filename    => filename,
         :line        => 1,
-        :syntax      => syntax,
+        :syntax      => self.class.syntax,
         :cache_store => cache_store(context),
         :importer    => importer,
-        :custom      => { :sprockets_context => context }
-
+        :custom      => { :sprockets_context => context },
+        sprockets: sprockets_options
         )
       end
 
