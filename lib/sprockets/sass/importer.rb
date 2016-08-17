@@ -12,7 +12,7 @@ module Sprockets
         if path.to_s =~ GLOB
           engine_from_glob(path, base_path, options)
         else
-         engine_from_path(path, base_path, options)
+          engine_from_path(path, base_path, options)
         end
       end
 
@@ -79,7 +79,7 @@ module Sprockets
       # style paths.
       def resolve(context, path, base_path)
         if Sprockets::Sass.version_of_sprockets >= 3
-         possible_files(context, path, base_path).each do |file|
+          possible_files(context, path, base_path).each do |file|
             found_item  = context.resolve(file.to_s, load_paths: context.environment.paths, base_path: base_path , accept: syntax_mime_type(file)) rescue nil
             return found_item if !found_item.nil?
           end
@@ -100,7 +100,7 @@ module Sprockets
         path_with_glob = base_path.dirname.join(glob).to_s
 
         Pathname.glob(path_with_glob).sort.select do |path|
-          path != context.pathname && context.asset_requirable?(path)
+          resolve(context, path, base_path)
         end
       end
 
@@ -115,7 +115,7 @@ module Sprockets
         paths     = additional_paths.concat(["#{path}", "#{partial_path}" ])
 
         if Sprockets::Sass.version_of_sprockets >= 3
-          paths = paths.map {|path| path.to_s.start_with?('.') ? path : Pathname.new(path.to_s.prepend('./')) }
+          paths = paths.map {|path| path.to_s.start_with?('.') || path.to_s.include?('*') ? path : Pathname.new(path.to_s.prepend('./')) }
         end
         # Find base_path's root
         env_root_paths = context.environment.paths.map {|p| Pathname.new(p) }
@@ -165,44 +165,48 @@ module Sprockets
 
 
       # Internal: Run processors on filename and data.
-       #
-       # Returns Hash.
-       def process(processors, context, path)
-         data, metadata = Sprockets::Sass::Utils.read_template_file(path.to_s), {}
+      #
+      # Returns Hash.
+      def process(processors, context, path)
+        data = Sprockets::Sass::Utils.read_template_file(path.to_s)
 
-         input = {
-           environment: context,
-           filename: path.to_s,
-           uri: path.to_s,
-           content_type: syntax_mime_type(path),
-         }
-         
-         processors.each do |processor|
-           begin
-             result = processor.call(input.merge(data: data, metadata: metadata))
-             case result
-             when NilClass
-               # noop
-             when Hash
-               data = result[:data] if result.key?(:data)
+        input = {
+          environment: context.environment,
+          cache: context.environment.cache,
+          uri: path.to_s ,
+          filename: path.to_s,
+          load_path: context.environment.paths,
+          name: File.basename(path),
+          content_type: syntax_mime_type(path),
+          data: data,
+          metadata: context.metadata
+        }
 
-             when String
+        processors.each do |processor|
+          begin
+            result = processor.call(input)
+            case result
+            when NilClass
+              # noop
+            when Hash
+              data = result[:data] if result.key?(:data)
+
+            when String
               data = result
-           else
-               raise Error, "invalid processor return type: #{result.class}"
-             end
-           end
-         end
+            else
+              raise Error, "invalid processor return type: #{result.class}"
+            end
+          end
+        end
 
-         data
-       end
+        data
+      end
 
 
       # Returns the string to be passed to the Sass engine. We use
       # Sprockets to process the file, but we remove any Sass processors
       # because we need to let the Sass::Engine handle that.
       def evaluate(context,  path)
-      #  return context.environment.load("file://#{path.to_s}?type=#{syntax_mime_type(path)}") unless  context.respond_to?(:evaluate)
         attributes = context.environment.respond_to?(:attributes_for) ? context.environment.attributes_for(path) : context.environment.send(:parse_path_extnames,path.to_s)
         content_type = attributes.respond_to?(:content_type) ? attributes.content_type : attributes[1]
         engines = attributes.respond_to?(:engines) ? attributes.engines : []

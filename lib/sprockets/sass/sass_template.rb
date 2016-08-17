@@ -163,7 +163,7 @@ module Sprockets
         sass = merge_sass_options(sass.dup, @sass_config) if defined?(@sass_config) && @sass_config.is_a?(Hash)
         sass
       end
-
+      
 
 
       def cache_store(context)
