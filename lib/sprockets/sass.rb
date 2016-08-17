@@ -38,6 +38,8 @@ module Sprockets
   rescue LoadError; end
 
   if Sprockets::Sass.version_of_sprockets >= 3
+    require 'sprockets/processing'
+    extend Sprockets::Processing
     register_mime_type 'application/scss+ruby', extensions: ['.scss.erb', '.css.scss.erb']
     register_mime_type 'application/sass+ruby', extensions: ['.sass.erb', '.css.sass.erb']
   end
@@ -54,8 +56,6 @@ module Sprockets
       register_transformer 'application/sass+ruby', 'text/css', Sprockets::ERBProcessor
     end
   else
-    require 'sprockets/processing'
-    extend Sprockets::Processing
     register_mime_type 'text/sass', extensions: ['.sass', '.css.sass']
     register_mime_type 'text/scss', extensions: ['.scss', '.css.scss']
     register_transformer 'application/scss+ruby', 'text/scss', Sprockets::ERBProcessor
