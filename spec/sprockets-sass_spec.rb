@@ -355,7 +355,8 @@ describe Sprockets::Sass do
 
   it 'compresses css' do
     css = "div {\n  color: red;\n}\n"
-    compressed_css = Sprockets::Sass::Compressor.new.compress(css)
+    compressor = Sprockets::Sass::Compressor.new
+    compressed_css = compressor.call(data: css)
     expect(compressed_css).to eql("div{color:red}\n")
   end
 

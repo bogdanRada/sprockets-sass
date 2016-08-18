@@ -1,7 +1,7 @@
 module Sprockets
   module Sass
     class SassTemplate
-
+      VERSION = '1'
       # Internal: Defines default sass syntax to use. Exposed so the ScssProcessor
       # may override it.
       def self.syntax
@@ -31,7 +31,7 @@ module Sprockets
         initialize_engine
         if options.is_a?(Hash)
           @cache_version = options[:cache_version]
-          @cache_key = "#{self.class.name}:#{VERSION}:#{Autoload::Sass::VERSION}:#{@cache_version}".freeze
+          @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{@cache_version || VERSION}:#{Sprockets::Sass::Utils.digest(options)}".freeze
           @filename = options[:filename]
           @source = options[:data]
           @options = options.merge(default_options)
@@ -48,6 +48,7 @@ module Sprockets
           @filename = options
           @source = block.call
           @options = default_options
+          @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{VERSION}:#{Sprockets::Sass::Utils.digest(options)}".freeze
           @functions = Module.new do
             include Sprockets::Sass::Functions
             include Sprockets::Helpers
@@ -163,7 +164,7 @@ module Sprockets
         sass = merge_sass_options(sass.dup, @sass_config) if defined?(@sass_config) && @sass_config.is_a?(Hash)
         sass
       end
-      
+
 
 
       def cache_store(context)

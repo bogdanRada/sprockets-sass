@@ -3,6 +3,16 @@ module Sprockets
     class  Utils
       class << self
 
+        def digest(options)
+          if defined?(Sprockets::DigestUtils)
+            Sprockets::DigestUtils.digest(options)
+          else
+            options = options.is_a?(Hash) ? options : { value: options }
+            Digest::SHA256.hexdigest(JSON.generate(options))
+          end
+        end
+
+
         def read_template_file(file)
           data = File.open(file, 'rb') { |io| io.read }
           if data.respond_to?(:force_encoding)
