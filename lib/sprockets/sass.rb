@@ -31,7 +31,6 @@ module Sprockets
     @add_sass_functions = true
   end
 
-
   begin # Newwer sprockets -- Need to make sure this are defined
     require 'sprockets/directive_processor'
     require 'sprockets/sass_processor'

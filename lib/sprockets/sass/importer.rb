@@ -1,6 +1,9 @@
 require 'sass/importers/base'
 require 'pathname'
 
+#Sprockets 4 needs this , becasue it doesnt use ::Sass in code 
+Sprockets::Sass::Importers = ::Sass::Importers
+
 module Sprockets
   module Sass
     class Importer < ::Sass::Importers::Base
@@ -97,7 +100,8 @@ module Sprockets
 
       def asset_requirable?(context, path)
         available_content_types = ['text/css', syntax_mime_type(path), "text/#{syntax(path)}+ruby"]
-        pathname = context.resolve(path.to_s)
+        pathname = context.resolve(path.to_s) rescue nil
+        return false if pathname.nil?
         path_content_type, attributes = content_type_of_path(context, path)
         if Sprockets::Sass.version_of_sprockets >= 4
           asset = context.environment.load(pathname)
@@ -196,8 +200,14 @@ module Sprockets
 
 
       def content_type_of_path(context, path)
+        if Sprockets::Sass.version_of_sprockets < 4
         attributes = context.environment.respond_to?(:attributes_for) ? context.environment.attributes_for(path) : context.environment.send(:parse_path_extnames, path.to_s)
         content_type = attributes.respond_to?(:content_type) ? attributes.content_type : attributes[1]
+        else
+          pathname = context.resolve(path.to_s) rescue nil
+          content_type = pathname.nil? ? nil : pathname.to_s.scan(/\?type\=(.*)/).flatten.first unless pathname.nil?
+          attributes = {}
+        end
         [content_type, attributes]
       end
 
@@ -206,6 +216,10 @@ module Sprockets
       #
       # Returns Hash.
       def process(processors, context, path)
+        if Sprockets::Sass.version_of_sprockets >= 4
+          asset = context.environment.load(path) # because resolve now returns file://
+          path = asset.filename
+        end
         data = Sprockets::Sass::Utils.read_template_file(path.to_s)
         content_type, attributes = content_type_of_path(context, path)
 
@@ -255,7 +269,7 @@ module Sprockets
       def evaluate(context,  path)
         content_type, attributes = content_type_of_path(context, path)
         engines = attributes.respond_to?(:engines) ? attributes.engines : []
-        preprocessors =  Sprockets::Sass.version_of_sprockets >= 3 ? context.environment.preprocessors[content_type].map {|a| a.class } : context.environment.preprocessors(content_type)
+        preprocessors =  Sprockets::Sass.version_of_sprockets >= 3 ? context.environment.preprocessors[content_type].map {|a| a.class == Class ? a : a.class } : context.environment.preprocessors(content_type)
         available_transformers = context.environment.respond_to?(:transformers) ?  context.environment.transformers[content_type] : {}
         additional_transformers = available_transformers.key?(syntax_mime_type(path)) ? available_transformers[syntax_mime_type(path)] : []
         additional_transformers = additional_transformers.is_a?(Array) ? additional_transformers : [additional_transformers]
