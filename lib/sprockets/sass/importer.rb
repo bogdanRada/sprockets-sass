@@ -82,7 +82,7 @@ module Sprockets
         if Sprockets::Sass.version_of_sprockets >= 3
           paths.each do |file|
             found_item  = context.resolve(file.to_s, load_paths: context.environment.paths, base_path: root_path , accept: syntax_mime_type(path)) rescue nil
-            return found_item if !found_item.nil? && asset_requirable?(context, found_item)
+            return found_item if !found_item.nil?  && asset_requirable?(context, found_item)
           end
         else
           paths.each do |file|
@@ -96,11 +96,17 @@ module Sprockets
       end
 
       def asset_requirable?(context, path)
-        pathname = context.resolve(path)
-        content_type = syntax_mime_type(path)
-        stat = context.environment.stat(path)
+        available_content_types = ['text/css', syntax_mime_type(path), "text/#{syntax(path)}+ruby"]
+        pathname = context.resolve(path.to_s)
+        path_content_type, attributes = content_type_of_path(context, path)
+        if Sprockets::Sass.version_of_sprockets >= 4
+          asset = context.environment.load(pathname)
+          stat = context.environment.stat(asset.filename)
+        else
+          stat = context.environment.stat(path)
+        end
         return false unless stat && stat.file?
-        true
+        context.content_type.nil? || available_content_types.include?(path_content_type) || available_content_types.include?(context.content_type)
       end
 
       # Finds all of the assets using the given glob.
@@ -190,7 +196,7 @@ module Sprockets
 
 
       def content_type_of_path(context, path)
-        attributes = context.environment.respond_to?(:attributes_for) ? context.environment.attributes_for(path) : context.environment.send(:parse_path_extnames,path.to_s)
+        attributes = context.environment.respond_to?(:attributes_for) ? context.environment.attributes_for(path) : context.environment.send(:parse_path_extnames, path.to_s)
         content_type = attributes.respond_to?(:content_type) ? attributes.content_type : attributes[1]
         [content_type, attributes]
       end
