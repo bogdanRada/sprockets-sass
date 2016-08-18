@@ -30,8 +30,8 @@ module Sprockets
         default_options  = { default_encoding: Encoding.default_external || 'utf-8' }
         initialize_engine
         if options.is_a?(Hash)
-          @cache_version = options[:cache_version]
-          @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{@cache_version || VERSION}:#{Sprockets::Sass::Utils.digest(options)}".freeze
+          @cache_version = options[:cache_version] || VERSION
+          @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{@cache_version}:#{Sprockets::Sass::Utils.digest(options)}".freeze
           @filename = options[:filename]
           @source = options[:data]
           @options = options.merge(default_options)
@@ -48,6 +48,7 @@ module Sprockets
           @filename = options
           @source = block.call
           @options = default_options
+          @cache_version = VERSION
           @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{VERSION}:#{Sprockets::Sass::Utils.digest(options)}".freeze
           @functions = Module.new do
             include Sprockets::Sass::Functions
@@ -169,7 +170,7 @@ module Sprockets
 
       def cache_store(context)
         return nil if context.environment.cache.nil?
-        
+
         if Sprockets::Sass.version_of_sprockets < 3
           if defined?(Sprockets::SassCacheStore)
             Sprockets::SassCacheStore.new context.environment
@@ -177,8 +178,8 @@ module Sprockets
             Sprockets::Sass::LegacyCacheStore.new context.environment
           end
         else
-          if defined?(Sprockets::SassCacheStore)
-            Sprockets::SassCacheStore.new(@input[:cache], @cache_version)
+          if defined?(Sprockets::SassProcessor::CacheStore)
+            Sprockets::SassProcessor::CacheStore.new(@input[:cache], @cache_version)
           else
             Sprockets::Sass::CacheStore.new(@input[:cache], @cache_version)
           end
