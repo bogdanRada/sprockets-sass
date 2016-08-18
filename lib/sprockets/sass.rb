@@ -63,8 +63,6 @@ module Sprockets
     register_mime_type 'text/scss', extensions: ['.scss', '.css.scss']
     register_transformer 'application/scss+ruby', 'text/scss', Sprockets::ERBProcessor
     register_transformer 'application/sass+ruby', 'text/sass', Sprockets::ERBProcessor
-    register_compressor 'text/sass', :sprockets_sass, Sprockets::Sass::Compressor
-    register_compressor 'text/scss', :sprockets_sass, Sprockets::Sass::Compressor
     register_preprocessor 'text/sass',  Sprockets::Sass::SassTemplate
     register_preprocessor 'text/scss',  Sprockets::Sass::ScssTemplate
   end
