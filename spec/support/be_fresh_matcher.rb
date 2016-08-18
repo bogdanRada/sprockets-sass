@@ -7,10 +7,10 @@ RSpec::Matchers.define :be_fresh do |env, old_asset|
         actual.fresh?
       end
     else
-    true #  actual.eql?(old_asset)
+      actual.eql?(old_asset)
     end
   end
-
+  
   failure_message_for_should do |env|
     'expected asset to be fresh'
   end

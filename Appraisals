@@ -1,4 +1,4 @@
-# 
+
 # appraise 'sprockets_2.2' do
 #   gem 'sprockets', '~> 2.2.0'
 #   gem 'sass', '~> 3.2.0'

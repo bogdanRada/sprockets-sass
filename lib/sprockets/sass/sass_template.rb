@@ -116,11 +116,11 @@ module Sprockets
 
           engine = ::Sass::Engine.new(data, sass_options)
 
-           if Sprockets::Sass.version_of_sprockets >= 3
-             css = Sprockets::Sass::Utils.module_include(::Sass::Script::Functions, @functions) do
+          if Sprockets::Sass.version_of_sprockets >= 3
+            css = Sprockets::Sass::Utils.module_include(::Sass::Script::Functions, @functions) do
               css = engine.render
-             end
-           else
+            end
+          else
             css = engine.render
           end
 
@@ -169,11 +169,19 @@ module Sprockets
 
       def cache_store(context)
         return nil if context.environment.cache.nil?
-
-        if defined?(Sprockets::SassCacheStore)
-          Sprockets::SassCacheStore.new context.environment
+        
+        if Sprockets::Sass.version_of_sprockets < 3
+          if defined?(Sprockets::SassCacheStore)
+            Sprockets::SassCacheStore.new context.environment
+          else
+            Sprockets::Sass::LegacyCacheStore.new context.environment
+          end
         else
-          Sprockets::Sass::CacheStore.new context.environment
+          if defined?(Sprockets::SassCacheStore)
+            Sprockets::SassCacheStore.new(@input[:cache], @cache_version)
+          else
+            Sprockets::Sass::CacheStore.new(@input[:cache], @cache_version)
+          end
         end
       end
 
@@ -207,7 +215,8 @@ module Sprockets
         :filename    => filename,
         :line        => 1,
         :syntax      => self.class.syntax,
-        :cache_store => cache_store(context),
+        :cache       => true,
+        :cache_store       => cache_store(context),
         :importer    => importer,
         :custom      => { :sprockets_context => context },
         sprockets: sprockets_options

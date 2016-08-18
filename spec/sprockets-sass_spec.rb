@@ -20,7 +20,7 @@ describe Sprockets::Sass do
     expect(asset.to_s).to eql("body {\n  color: blue; }\n")
   end
 
-  xit 'processes scss files normally without the .css extension' do
+  it 'processes scss files normally without the .css extension' do
     @assets.file 'main.scss', '//= require dep'
     @assets.file 'dep.scss', 'body { color: blue; }'
     asset = @env['main']
@@ -264,7 +264,7 @@ describe Sprockets::Sass do
 
     @env['main.css'].to_s
     if Sass.version[:minor] > 2
-      sass_cache = cache.detect.detect { |key, value| value['pathname'] =~ /main\.css\.scss/ }
+      sass_cache = cache.detect { |key, value| value['pathname'] =~ /main\.css\.scss/ }
     else
       sass_cache = cache.keys.detect { |key| key =~ /main\.css\.scss/ }
     end
@@ -379,7 +379,7 @@ describe Sprockets::Sass do
       #   template.initialize_engine
       # end
 
-      xit 'does not add Sass functions if sprockets-helpers is not available' do
+      it 'does not add Sass functions if sprockets-helpers is not available' do
         Sprockets::Sass::SassTemplate.sass_functions_initialized = false
         Sprockets::Sass.add_sass_functions = true
         template.should_receive(:require).with('sprockets/helpers').and_raise LoadError

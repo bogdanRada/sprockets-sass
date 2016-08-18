@@ -1,27 +1,23 @@
-require 'sass'
-
 module Sprockets
   module Sass
+    # Internal: Cache wrapper for Sprockets cache adapter.
     class CacheStore < ::Sass::CacheStores::Base
-      attr_reader :environment
+      VERSION = '1'
 
-      def initialize(environment)
-        @environment = environment
+      def initialize(cache, version)
+        @cache, @version = cache, "#{VERSION}/#{version}"
       end
 
       def _store(key, version, sha, contents)
-        environment.send :cache_set, "sass/#{key}", { :version => version, :sha => sha, :contents => contents }
+        @cache.set("#{@version}/#{version}/#{key}/#{sha}", contents, true)
       end
 
       def _retrieve(key, version, sha)
-        if obj = environment.send(:cache_get, "sass/#{key}")
-          return unless obj[:version] == version
-          return unless obj[:sha] == sha
-          obj[:obj]
-        else
-          nil
-        end
+        @cache.get("#{@version}/#{version}/#{key}/#{sha}", true)
+      end
 
+      def path_to(key)
+        key
       end
     end
   end
