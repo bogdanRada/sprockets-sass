@@ -19,8 +19,7 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
 
   s.add_dependency             'sprockets',         '>= 2.0', '< 4.0'
-  s.add_dependency             'tilt',              '>= 1.1'
-
+  
   s.add_development_dependency 'rspec',             '~> 2.13'
   s.add_development_dependency 'test_construct',    '~> 2.0'
   s.add_development_dependency 'sprockets-helpers', '~> 1.0'
