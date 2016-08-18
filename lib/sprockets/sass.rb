@@ -12,7 +12,6 @@ module Sprockets
     autoload :CacheStore, 'sprockets/sass/cache_store'
     autoload :Compressor, 'sprockets/sass/compressor'
     autoload :Importer,   'sprockets/sass/importer'
-    DIRECTIVE_COMMENTS = ["//", ["/*", "*/", '*']]
     class << self
       # Global configuration for `Sass::Engine` instances.
       attr_accessor :options
@@ -48,9 +47,6 @@ module Sprockets
     if respond_to?(:register_transformer)
       register_transformer 'application/scss+ruby', 'text/css', Sprockets::ERBProcessor
       register_transformer 'application/sass+ruby', 'text/css', Sprockets::ERBProcessor
-      args = ['.css', Sprockets::DirectiveProcessor.new(comments: Sprockets::Sass::DIRECTIVE_COMMENTS)]
-      args << { mime_type: 'text/css', silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
-      register_engine(*args)
     end
     args = ['.sass', Sprockets::Sass::SassTemplate]
     args << { mime_type: 'text/css',  silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
@@ -63,8 +59,6 @@ module Sprockets
     register_mime_type 'text/scss', extensions: ['.scss', '.css.scss']
     register_transformer 'application/scss+ruby', 'text/scss', Sprockets::ERBProcessor
     register_transformer 'application/sass+ruby', 'text/sass', Sprockets::ERBProcessor
-    register_preprocessor 'text/scss', Sprockets::DirectiveProcessor.new(comments: Sprockets::Sass::DIRECTIVE_COMMENTS)
-    register_preprocessor 'text/sass',  Sprockets::DirectiveProcessor.new(comments: Sprockets::Sass::DIRECTIVE_COMMENTS)
     register_preprocessor 'text/sass',  Sprockets::Sass::SassTemplate
     register_preprocessor 'text/scss',  Sprockets::Sass::ScssTemplate
   end

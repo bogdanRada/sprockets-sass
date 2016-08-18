@@ -183,6 +183,9 @@ module Sprockets
       # Returns Hash.
       def process(processors, context, path)
         data = Sprockets::Sass::Utils.read_template_file(path.to_s)
+        attributes = context.environment.respond_to?(:attributes_for) ? context.environment.attributes_for(path) : context.environment.send(:parse_path_extnames,path.to_s)
+        content_type = attributes.respond_to?(:content_type) ? attributes.content_type : attributes[1]
+
         input = {
           environment: context.environment,
           cache: context.environment.cache,
@@ -190,7 +193,7 @@ module Sprockets
           filename: path.to_s,
           load_path: context.environment.paths,
           name: File.basename(path),
-          content_type: syntax_mime_type(path),
+          content_type: content_type,
           data: data,
           metadata: context.metadata
         }
@@ -203,7 +206,14 @@ module Sprockets
               # noop
             when Hash
               data = result[:data] if result.key?(:data)
-
+              context.metadata.merge!(result)
+              context.metadata.delete(:data)
+              if result.key?(:required)
+                result[:required].each do |file|
+                  file_asset = context.environment.load(file)
+                  data = data + process(processors, context, file_asset.filename)
+                end
+              end
             when String
               data = result
             else
@@ -229,7 +239,7 @@ module Sprockets
         additional_transformers = additional_transformers.is_a?(Array) ? additional_transformers : [additional_transformers]
         processors =  additional_transformers.reverse + preprocessors + engines.reverse
         processors.delete_if { |processor|  filtered_processor_classes.include?(processor) || filtered_processor_classes.any?{|filtered_processor| !processor.is_a?(Proc)  && processor < filtered_processor  } }
-        context.respond_to?(:evaluate) ? context.evaluate(path, :processors => processors) : process(processors, context , path)
+       context.respond_to?(:evaluate) ? context.evaluate(path, :processors => processors) : process(processors, context , path)
       end
     end
   end
