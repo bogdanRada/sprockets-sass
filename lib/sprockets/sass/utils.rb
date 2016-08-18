@@ -3,6 +3,25 @@ module Sprockets
     class  Utils
       class << self
 
+        def read_file_binary(file, options = {})
+          default_encoding = options.delete :default_encoding
+
+          # load template data and prepare (uses binread to avoid encoding issues)
+          data = read_template_file(file)
+
+          if data.respond_to?(:force_encoding)
+            if default_encoding
+              data = data.dup if data.frozen?
+              data.force_encoding(default_encoding)
+            end
+
+            if !data.valid_encoding?
+              raise Encoding::InvalidByteSequenceError, "#{filename} is not valid #{data.encoding}"
+            end
+          end
+          data
+        end
+
         def digest(options)
           if defined?(Sprockets::DigestUtils)
             Sprockets::DigestUtils.digest(options)

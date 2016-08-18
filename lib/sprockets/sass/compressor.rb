@@ -5,6 +5,9 @@ module Sprockets
     class Compressor
       VERSION = '1'
 
+      def self.default_mime_type
+        'text/css'
+      end
       # Public: Return singleton instance with default options.
       #
       # Returns SassCompressor object.
@@ -20,30 +23,47 @@ module Sprockets
         instance.cache_key
       end
 
-      attr_reader :cache_key
+      attr_reader :cache_key, :input, :filename, :source, :options
 
       def initialize(options = {}, &block)
         @default_options  = {
           syntax: :scss,
           cache: false,
           read_cache: false,
-          style: :compressed
+          style: :compressed,
+          default_encoding: Encoding.default_external || 'utf-8'
         }
+        @options = @default_options
         @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{VERSION}:#{Sprockets::Sass::Utils.digest(options)}".freeze
         if options.is_a?(Hash)
-          @options = @default_options.merge(options).freeze
-        elsif options.is_a?(String)
+          @input = options
+          @filename = options[:filename]
+          @source = options[:data]
+          @options = @options.merge(options)
+        else
           @filename = options
-          @source = block.call
-          @options = @default_options.freeze
+          @source = block_given? ? block.call : nil
         end
       end
 
-
-
       def call(input)
-        if input[:data].count("\n") > 2
-          engine = ::Sass::Engine.new(input[:data], @options.merge(filename: 'filename'))
+        @input = input
+        @filename = input[:filename]
+        @source   = input[:data]
+        run
+      end
+
+
+      def render(context, empty_hash_wtf)
+        @context = context
+        run
+      end
+
+
+      def run
+        data = Sprockets::Sass::Utils.read_file_binary(filename, options)
+        if data.count("\n") > 2
+          engine = ::Sass::Engine.new(data, @options.merge(filename: filename))
           if defined?(Sprockets::SourceMapUtils) && engine.respond_to?(:render_with_sourcemap)
             css, map = engine.render_with_sourcemap('')
 
@@ -59,7 +79,7 @@ module Sprockets
             engine.render
           end
         else
-          {data: input[:data]}
+          Sprockets::Sass.version_of_sprockets >= 3 ? { data: data } : data
         end
       end
 
