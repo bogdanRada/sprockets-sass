@@ -4,10 +4,12 @@ require 'sprockets/sass/version'
 require 'sprockets/sass/utils'
 require 'sprockets/sass/sass_template'
 require 'sprockets/sass/scss_template'
+require 'sprockets/sass/functions'
 require 'json'
 
 module Sprockets
   module Sass
+    autoload :LegacyCacheStore, 'sprockets/sass/legacy_cache_store'
     autoload :CacheStore, 'sprockets/sass/cache_store'
     autoload :Compressor, 'sprockets/sass/compressor'
     autoload :Importer,   'sprockets/sass/importer'
@@ -53,10 +55,10 @@ module Sprockets
     # args << { mime_type: 'text/css',  silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
     # register_engine(*args)
     args = ['.sass', Sprockets::Sass::SassTemplate]
-    args << { mime_type: 'text/css',  silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
+    args << { mime_type: 'text/css', extensions: ['.sass', '.css.sass'],  silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
     register_engine(*args)
     args = ['.scss', Sprockets::Sass::ScssTemplate]
-    args << { mime_type: 'text/css', silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
+    args << { mime_type: 'text/css', extensions: ['.scss', '.css.scss'], silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
     register_engine(*args)
   else
     register_mime_type 'text/sass', extensions: ['.sass', '.css.sass']

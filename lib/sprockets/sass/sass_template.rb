@@ -2,6 +2,10 @@ module Sprockets
   module Sass
     class SassTemplate
       VERSION = '1'
+
+      def self.default_mime_type
+        Sprockets.respond_to?(:register_engine) ? 'text/css' : "text/#{syntax}"
+      end
       # Internal: Defines default sass syntax to use. Exposed so the ScssProcessor
       # may override it.
       def self.syntax
@@ -39,8 +43,8 @@ module Sprockets
           @sass_config = options[:sass_config] || {}
           @input = options
           @functions = Module.new do
-            include Sprockets::SassProcessor::Functions
-            include Sprockets::Helpers
+            include Sprockets::Helpers if defined?(Sprockets::Helpers)
+            include Sprockets::Sass::Functions
             include options[:functions] if options[:functions]
             class_eval(&block) if block_given?
           end
@@ -51,8 +55,8 @@ module Sprockets
           @cache_version = VERSION
           @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{VERSION}:#{Sprockets::Sass::Utils.digest(options)}".freeze
           @functions = Module.new do
+            include Sprockets::Helpers if defined?(Sprockets::Helpers)
             include Sprockets::Sass::Functions
-            include Sprockets::Helpers
           end
         end
       end
@@ -117,11 +121,7 @@ module Sprockets
 
           engine = ::Sass::Engine.new(data, sass_options)
 
-          if Sprockets::Sass.version_of_sprockets >= 3
-            css = Sprockets::Sass::Utils.module_include(::Sass::Script::Functions, @functions) do
-              css = engine.render
-            end
-          else
+          css = Sprockets::Sass::Utils.module_include(::Sass::Script::Functions, @functions) do
             css = engine.render
           end
 

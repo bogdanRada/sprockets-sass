@@ -367,32 +367,21 @@ describe Sprockets::Sass do
       end
     end
     describe 'initialize_engine' do
-      # it 'initializes super if super is uninitinalized' do
-      #   Tilt::SassTemplate.stub(:engine_initialized?).and_return false
-      #   template.should_receive(:require_template_library) # called from Tilt::SassTemplate.initialize
-      #   template.initialize_engine
-      # end
-      #
-      # it 'does not initializes super if super is initinalized to silence warnings' do
-      #   Tilt::SassTemplate.stub(:engine_initialized?).and_return true
-      #   template.should_not_receive(:require_template_library) # called from Tilt::SassTemplate.initialize
-      #   template.initialize_engine
-      # end
 
-      it 'does not add Sass functions if sprockets-helpers is not available' do
+      it 'does add Sass functions if sprockets-helpers is not available' do
         Sprockets::Sass::SassTemplate.sass_functions_initialized = false
         Sprockets::Sass.add_sass_functions = true
-        template.should_receive(:require).with('sprockets/helpers').and_raise LoadError
-        template.should_not_receive(:require).with 'sprockets/sass/functions'
-        template.initialize_engine
-        expect(Sprockets::Sass::SassTemplate.engine_initialized?).to be_truthy
+        Sprockets::Sass::SassTemplate.any_instance.should_receive(:require).with('sprockets/helpers').and_raise LoadError
+        Sprockets::Sass::SassTemplate.any_instance.should_not_receive(:require).with 'sprockets/sass/functions'
+        template
+        expect(Sprockets::Sass::SassTemplate.engine_initialized?).to be_falsy
       end
 
       it 'does not add Sass functions if add_sass_functions is false' do
         Sprockets::Sass.add_sass_functions = false
         template.should_not_receive(:require).with 'sprockets/sass/functions'
         template.initialize_engine
-        expect(Sprockets::Sass::SassTemplate.engine_initialized?).to be_truthy
+        expect(Sprockets::Sass::SassTemplate.engine_initialized?).to be_falsy
         Sprockets::Sass.add_sass_functions = true
       end
    end
