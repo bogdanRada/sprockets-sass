@@ -12,7 +12,7 @@ end
 desc 'Default: run the unit tests.'
 task default: [:all]
 
-desc 'Test the plugin under all supported Rails versions.'
+desc 'Test the plugin under all supported versions.'
 task :all do |_t|
     exec('bundle exec appraisal install && bundle exec rake appraisal spec')
 end

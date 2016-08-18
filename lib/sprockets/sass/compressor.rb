@@ -48,38 +48,43 @@ module Sprockets
 
       def call(input)
         @input = input
-        @filename = input[:filename]
-        @source   = input[:data]
-        run
+        if input.is_a?(Hash)
+          @filename = input[:filename]
+          @source   = input[:data]
+        end
+        data = filename || @input
+        run(data)
       end
 
 
       def render(context, empty_hash_wtf)
         @context = context
-        run
+        run(filename)
+      end
+
+      def self.compress(input)
+        call(input)
       end
 
 
-      def run
-        data = Sprockets::Sass::Utils.read_file_binary(filename, options)
-        if data.count("\n") > 2
+      def run(string)
+        data = File.exist?(string.to_s) ? Sprockets::Sass::Utils.read_file_binary(string, options) : string
+        if data.count("\n") >= 2
           engine = ::Sass::Engine.new(data, @options.merge(filename: filename))
-          if defined?(Sprockets::SourceMapUtils) && engine.respond_to?(:render_with_sourcemap)
-            css, map = engine.render_with_sourcemap('')
+          css = engine.render
 
-            css = css.sub("/*# sourceMappingURL= */\n", '')
-
-            map = Sprockets::SourceMapUtils.combine_source_maps(
-            input[:metadata][:map],
-            Sprockets::SourceMapUtils.decode_json_source_map(map.to_json(css_uri: 'uri'))["mappings"]
-            )
-
-            { data: css, map: map }
+          sass_dependencies = Set.new([filename])
+          if defined?(@context) && @context.respond_to?(:metadata)
+            engine.dependencies.map do |dependency|
+              sass_dependencies << dependency.options[:filename]
+              context.metadata[:dependencies] << Sprockets::URIUtils.build_file_digest_uri(dependency.options[:filename])
+            end
+            context.metadata.merge(data: css, sass_dependencies: sass_dependencies)
           else
-            engine.render
+            css
           end
         else
-          Sprockets::Sass.version_of_sprockets >= 3 ? { data: data } : data
+          data
         end
       end
 

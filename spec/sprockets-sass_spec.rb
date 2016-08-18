@@ -4,6 +4,7 @@ describe Sprockets::Sass do
   before :each do
     @root = create_construct
     @assets = @root.directory 'assets'
+    @public_dir = @root.directory 'public'
     @env = Sprockets::Environment.new @root.to_s
     @env.append_path @assets.to_s
     @env.register_postprocessor 'text/css', FailPostProcessor
@@ -355,12 +356,35 @@ describe Sprockets::Sass do
     expect(@env['bullets.css'].to_s).to match(%r[background: url\("/assets/bullet\.gif"\)])
   end
 
-  it 'compresses css' do
+  it 'compresses css from filename' do
     file_path = @assets.file 'asset_path.css.scss', %(div {\n  color: red;\n}\n)
-    compressor = Sprockets::Sass::Compressor.new(file_path)
-    compressed_css = compressor.run
+    compressor = Sprockets::Sass::Compressor.new
+    compressed_css = compressor.run(file_path)
     expect(compressed_css).to eql("div{color:red}\n")
   end
+
+  it 'compresses css from string' do
+    compressor = Sprockets::Sass::Compressor.new
+    compressed_css = compressor.run("div {\n  color: red;\n}\n")
+    expect(compressed_css).to eql("div{color:red}\n")
+  end
+
+  if Sprockets::Sass.version_of_sprockets < 3
+    it 'compresses css using the environment compressor' do
+      @env.css_compressor = Sprockets::Sass::Compressor
+      @assets.file 'asset_path.css.scss', %(div {\n  color: red;\n}\n)
+      res = compile_asset_and_return_compilation(@env, @public_dir, "asset_path.css")
+      expect(res).to  eql("div{color:red}\n")
+    end
+  else
+    it 'compresses css using the environment compressor' do
+      @env.css_compressor = :sprockets_sass
+      @assets.file 'asset_path.css.scss', %(div {\n  color: red;\n}\n)
+      res = compile_asset_and_return_compilation(@env, @public_dir, "asset_path.css")
+      expect(res).to  eql("div{color:red}\n")
+    end
+  end
+
 
   describe Sprockets::Sass::SassTemplate do
     let(:template) do

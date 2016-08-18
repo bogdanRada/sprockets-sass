@@ -1,5 +1,4 @@
 require 'sprockets'
-require 'sprockets/engines'
 require 'sprockets/sass/version'
 require 'sprockets/sass/utils'
 require 'sprockets/sass/sass_template'
@@ -31,11 +30,14 @@ module Sprockets
     @options = {}
     @add_sass_functions = true
   end
-  begin
+
+
+  begin # Newwer sprockets -- Need to make sure this are defined
     require 'sprockets/directive_processor'
     require 'sprockets/sass_processor'
     require 'sprockets/sassc_processor'
     require 'sprockets/digest_utils'
+    require 'sprockets/engines'
   rescue LoadError; end
 
   if Sprockets::Sass.version_of_sprockets >= 3
@@ -43,13 +45,13 @@ module Sprockets
     extend Sprockets::Processing
     register_mime_type 'application/scss+ruby', extensions: ['.scss.erb', '.css.scss.erb']
     register_mime_type 'application/sass+ruby', extensions: ['.sass.erb', '.css.sass.erb']
+    register_compressor 'text/css', :sprockets_sass, Sprockets::Sass::Compressor
   end
 
   if respond_to?(:register_engine)
     if respond_to?(:register_transformer)
       register_transformer 'application/scss+ruby', 'text/css', Sprockets::ERBProcessor
       register_transformer 'application/sass+ruby', 'text/css', Sprockets::ERBProcessor
-      register_compressor 'text/css', :sprockets_sass, Sprockets::Sass::Compressor
     end
     args = ['.sass', Sprockets::Sass::SassTemplate]
     args << { mime_type: 'text/css', extensions: ['.sass', '.css.sass'],  silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
@@ -57,14 +59,13 @@ module Sprockets
     args = ['.scss', Sprockets::Sass::ScssTemplate]
     args << { mime_type: 'text/css', extensions: ['.scss', '.css.scss'], silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
     register_engine(*args)
-  else
+  else # Sprockets 4
     register_mime_type 'text/sass', extensions: ['.sass', '.css.sass']
     register_mime_type 'text/scss', extensions: ['.scss', '.css.scss']
     register_transformer 'application/scss+ruby', 'text/scss', Sprockets::ERBProcessor
     register_transformer 'application/sass+ruby', 'text/sass', Sprockets::ERBProcessor
     register_compressor 'text/sass', :sprockets_sass, Sprockets::Sass::Compressor
     register_compressor 'text/scss', :sprockets_sass, Sprockets::Sass::Compressor
-    register_compressor 'text/css', :sprockets_sass, Sprockets::Sass::Compressor
     register_preprocessor 'text/sass',  Sprockets::Sass::SassTemplate
     register_preprocessor 'text/scss',  Sprockets::Sass::ScssTemplate
   end

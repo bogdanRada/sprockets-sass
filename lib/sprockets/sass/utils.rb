@@ -23,6 +23,8 @@ module Sprockets
         end
 
         def digest(options)
+          options.delete_if{|key, value| value.is_a?(Pathname) } if options.is_a?(Hash)
+          options = options.to_s unless options.is_a?(Hash)
           if defined?(Sprockets::DigestUtils)
             Sprockets::DigestUtils.digest(options)
           else
