@@ -219,7 +219,7 @@ describe Sprockets::Sass do
 
     write_asset(dep, '$color: red;')
 
-    asset = @env['main.css']
+    asset = Sprockets::Sass.version_of_sprockets >= 3 ? @env['main.css'] : asset
     expect(asset).to_not be_fresh(@env, old_asset)
   end
 
@@ -234,7 +234,7 @@ describe Sprockets::Sass do
 
     write_asset(dep, '$color: red;')
 
-    asset = @env['main.css']
+    asset = Sprockets::Sass.version_of_sprockets >= 3 ? @env['main.css'] : asset
     expect(asset).to_not be_fresh(@env, old_asset)
   end
 
@@ -249,7 +249,7 @@ describe Sprockets::Sass do
 
     write_asset(dep, "$bg-color: white;" )
 
-    asset = @env['main.css']
+    asset = Sprockets::Sass.version_of_sprockets >= 3 ? @env['main.css'] : asset
 
     expect(asset).to_not be_fresh(@env, old_asset)
   end

@@ -23,5 +23,10 @@ def write_asset(filename, contents, mtime = nil)
   File.open(filename, 'w') do |f|
     f.write(contents)
   end
-  File.utime(mtime, mtime, filename)
+  if Sprockets::Sass.version_of_sprockets >= 3
+    File.utime(mtime, mtime, filename)
+  else
+    mtime = Time.now + 1
+    filename.utime mtime, mtime
+  end
 end
