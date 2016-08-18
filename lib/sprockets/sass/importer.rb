@@ -1,7 +1,7 @@
 require 'sass/importers/base'
 require 'pathname'
 
-#Sprockets 4 needs this , becasue it doesnt use ::Sass in code 
+#Sprockets 4 needs this , becasue it doesnt use ::Sass in code
 Sprockets::Sass::Importers = ::Sass::Importers
 
 module Sprockets
@@ -195,6 +195,10 @@ module Sprockets
         classes << Sprockets::ScssProcessor if defined?(Sprockets::ScssProcessor)
         classes << Sprockets::SasscProcessor if defined?(Sprockets::SasscProcessor)
         classes << Sprockets::ScsscProcessor if defined?(Sprockets::ScsscProcessor)
+        classes << Sprockets::Preprocessors::DefaultSourceMap if defined?(Sprockets::Preprocessors::DefaultSourceMap)
+        classes << Sprockets::SassCompressor if defined?(Sprockets::SassCompressor)
+        classes << Sprockets::YUICompressor if defined?(Sprockets::YUICompressor)
+        classes << Sprockets::SourceMapProcessor if defined?(Sprockets::SourceMapProcessor)
         classes
       end
 

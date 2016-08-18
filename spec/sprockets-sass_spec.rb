@@ -20,7 +20,7 @@ describe Sprockets::Sass do
     asset = @env['main.css']
     expect(asset.to_s).to eql("body {\n  color: blue; }\n")
   end
-  
+
   if Sprockets::Sass.version_of_sprockets < 4
     it 'processes scss files normally without the .css extension' do
       @assets.file 'main.scss', '//= require dep'
