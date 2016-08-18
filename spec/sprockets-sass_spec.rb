@@ -217,10 +217,9 @@ describe Sprockets::Sass do
     old_asset = asset.dup
     expect(asset).to be_fresh(@env, old_asset)
 
-    mtime = Time.now + 1
-    dep.open('w') { |f| f.write '$color: red;' }
-    dep.utime mtime, mtime
+    write_asset(dep, '$color: red;')
 
+    asset = @env['main.css']
     expect(asset).to_not be_fresh(@env, old_asset)
   end
 
@@ -233,10 +232,9 @@ describe Sprockets::Sass do
     old_asset = asset.dup
     expect(asset).to be_fresh(@env, old_asset)
 
-    mtime = Time.now + 1
-    dep.open('w') { |f| f.write '$color: red;' }
-    dep.utime mtime, mtime
+    write_asset(dep, '$color: red;')
 
+    asset = @env['main.css']
     expect(asset).to_not be_fresh(@env, old_asset)
   end
 
@@ -249,9 +247,9 @@ describe Sprockets::Sass do
     old_asset = asset.dup
     expect(asset).to be_fresh(@env, old_asset)
 
-    mtime = Time.now + 1
-    dep.open('w') { |f| f.write "$bg-color: white;" }
-    dep.utime mtime, mtime
+    write_asset(dep, "$bg-color: white;" )
+
+    asset = @env['main.css']
 
     expect(asset).to_not be_fresh(@env, old_asset)
   end

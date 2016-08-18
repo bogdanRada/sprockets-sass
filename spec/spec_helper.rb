@@ -16,3 +16,12 @@ Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each { |f| require f }
 RSpec.configure do |config|
   config.include TestConstruct::Helpers
 end
+
+
+def write_asset(filename, contents, mtime = nil)
+  mtime ||= [Time.now.to_i, File.stat(filename).mtime.to_i].max + 1
+  File.open(filename, 'w') do |f|
+    f.write(contents)
+  end
+  File.utime(mtime, mtime, filename)
+end
