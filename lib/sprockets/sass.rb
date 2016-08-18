@@ -65,8 +65,8 @@ module Sprockets
     register_transformer 'application/sass+ruby', 'text/sass', Sprockets::ERBProcessor
     register_preprocessor 'text/sass',  Sprockets::Sass::SassTemplate
     register_preprocessor 'text/scss',  Sprockets::Sass::ScssTemplate
-    register_preprocessor 'text/css',  Sprockets::Sass::SassTemplate
-    register_preprocessor 'text/css',  Sprockets::Sass::ScssTemplate
+    register_transformer 'text/sass', 'text/css',  Sprockets::Sass::SassTemplate
+    register_transformer 'text/scss', 'text/css',  Sprockets::Sass::ScssTemplate
   end
 
 end
