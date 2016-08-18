@@ -1,7 +1,7 @@
 require 'sass/importers/base'
 require 'pathname'
 
-#Sprockets 4 needs this , becasue it doesnt use ::Sass in code
+#Sprockets 4 needs this , becasue it doesnt use ::Sass in code, which results in a conflict with this gem :(
 Sprockets::Sass::Importers = ::Sass::Importers
 
 module Sprockets
