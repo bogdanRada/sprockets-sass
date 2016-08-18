@@ -84,10 +84,9 @@ appraise 'compass_0.11' do
   gem 'sass', '~> 3.2.0'
   gem 'compass', '~> 0.11.0'
 end
-
-
-# appraise 'sprockets_4.0_beta2' do
-#   gem 'sprockets', '4.0.0.beta2'
-#   gem 'sass', '~> 3.4.0'
-#   gem 'compass', '~> 1.0.0'
-# end
+#
+appraise 'sprockets_4.0_beta2' do
+  gem 'sprockets', '4.0.0.beta2'
+  gem 'sass', '~> 3.4.0'
+  gem 'compass', '~> 1.0.0'
+end

@@ -45,11 +45,13 @@ module Sprockets
     register_mime_type 'application/scss+ruby', extensions: ['.scss.erb', '.css.scss.erb']
     register_mime_type 'application/sass+ruby', extensions: ['.sass.erb', '.css.sass.erb']
     register_compressor 'text/css', :sprockets_sass, Sprockets::Sass::Compressor
-    register_transformer 'application/scss+ruby', 'text/css', Sprockets::ERBProcessor
-    register_transformer 'application/sass+ruby', 'text/css', Sprockets::ERBProcessor
   end
 
   if respond_to?(:register_engine)
+    if respond_to?(:register_transformer)
+      register_transformer 'application/scss+ruby', 'text/css', Sprockets::ERBProcessor
+      register_transformer 'application/sass+ruby', 'text/css', Sprockets::ERBProcessor
+    end
     args = ['.sass', Sprockets::Sass::SassTemplate]
     args << { mime_type: 'text/css', extensions: ['.sass', '.css.sass'],  silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
     register_engine(*args)
