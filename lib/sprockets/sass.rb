@@ -115,7 +115,9 @@ module Sprockets
     # The only solution would be to use a transformer, but the Sprockets transformers are executed first, which
     # return text/css and crash because the SASS engine don't know about some directives that this gem is using.
     # So our transformers are never executed. So for now we're using preprocessors until we find a better workaround
-    # or a way of hooking up a tranformer before another transformer
+    # or a way of hooking up a tranformer before another transformer.
+    #
+    # AND ALSO TRANSFORMERS CAN'T BE UNREGISTERED !!! :(
     #
     # In previous version of Sprockets this would work, because they used engines ( which work like  preprocessors )
     register_preprocessor 'text/sass',  Sprockets::Sass::SassTemplate
