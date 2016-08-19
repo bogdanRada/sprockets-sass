@@ -63,10 +63,13 @@ module Sprockets
     register_mime_type 'text/scss', extensions: ['.scss', '.css.scss']
     register_transformer 'application/scss+ruby', 'text/scss', Sprockets::ERBProcessor
     register_transformer 'application/sass+ruby', 'text/sass', Sprockets::ERBProcessor
+
+    # @TODO Find a way to use transformers instead and fix conflict with Sprockets 4 transformers
     register_preprocessor 'text/sass',  Sprockets::Sass::SassTemplate
-    register_preprocessor 'text/scss',  Sprockets::Sass::ScssTemplate
-    register_transformer 'text/sass', 'text/css',  Sprockets::Sass::SassTemplate
-    register_transformer 'text/scss', 'text/css',  Sprockets::Sass::ScssTemplate
+    register_preprocessor 'text/scss', Sprockets::Sass::ScssTemplate
+    register_preprocessor 'text/css',  Sprockets::Sass::SassTemplate
+    register_preprocessor 'text/css', Sprockets::Sass::ScssTemplate
+
   end
 
 end

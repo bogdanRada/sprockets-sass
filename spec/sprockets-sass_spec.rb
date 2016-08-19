@@ -77,7 +77,7 @@ describe Sprockets::Sass do
   it 'imports files with additional processors' do
     @assets.file 'main.css.scss', %(@import "dep";\nbody { color: $color; })
     @assets.file 'dep.css.scss.erb', "$color: <%= 'blue' %>;"
-    asset = @env['main.css']
+    asset = @env['main.css.scss']
     expect(asset.to_s).to eql("body {\n  color: blue; }\n")
   end
 
