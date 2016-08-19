@@ -109,12 +109,19 @@ module Sprockets
     # also uses anonymous classes which can't be filtered. Still trying to investigate how to filter them.
     # And some of the classes don't respond to call but to render. Very Crazy stuff here going on!!!
     #
+    # Also In sprockets 4 seems both text/css and text/scss and text/sass are used as mime types.
+    # This leads to registering same preprocessor twice (once for text/sass and text/css ) or (text/scss and text/css)
+    # Can't find a workaround registering it only one time each preprocessor :(
+    # The only solution would be to use a transformer, but the Sprockets transformers are executed first, which
+    # return text/css and crash because the SASS engine don't know about some directives that this gem is using.
+    # So our transformers are never executed. So for now we're using preprocessors until we find a better workaround
+    #
     # In previous version of Sprockets this would work, because they used engines ( which work like  preprocessors )
     register_preprocessor 'text/sass',  Sprockets::Sass::SassTemplate
     register_preprocessor 'text/scss', Sprockets::Sass::ScssTemplate
     register_preprocessor 'text/css',  Sprockets::Sass::SassTemplate
     register_preprocessor 'text/css', Sprockets::Sass::ScssTemplate
-
+    
   end
 
 end
