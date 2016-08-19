@@ -1,14 +1,14 @@
+# frozen_string_literal: true
 require 'sass/importers/base'
 require 'pathname'
 
-#Sprockets 4 needs this , becasue it doesnt use ::Sass in code, which results in a conflict with this gem :(
+# Sprockets 4 needs this , becasue it doesnt use ::Sass in code, which results in a conflict with this gem :(
 Sprockets::Sass::Importers = ::Sass::Importers
 
 module Sprockets
   module Sass
     class Importer < ::Sass::Importers::Base
       GLOB = /\*|\[.+\]/
-
 
       # @see Sass::Importers::Base#find_relative
       def find_relative(path, base_path, options)
@@ -25,7 +25,7 @@ module Sprockets
       end
 
       # @see Sass::Importers::Base#mtime
-      def mtime(path, options)
+      def mtime(path, _options)
         if pathname = resolve(path)
           pathname.mtime
         end
@@ -34,28 +34,28 @@ module Sprockets
       end
 
       # @see Sass::Importers::Base#key
-      def key(path, options)
+      def key(path, _options)
         path = Pathname.new(path)
         ["#{self.class.name}:#{path.dirname.expand_path}", path.basename]
       end
 
       # @see Sass::Importers::Base#to_s
       def to_s
-        self.inspect
+        inspect
       end
 
-      protected
+    protected
 
       # Create a Sass::Engine from the given path.
       def engine_from_path(path, base_path, options)
         context = options[:custom][:sprockets_context]
-        pathname = resolve(context, path, base_path) or return nil
+        (pathname = resolve(context, path, base_path)) || (return nil)
         context.depend_on pathname
         ::Sass::Engine.new evaluate(context, pathname), options.merge(
-        :filename => pathname.to_s,
-        :syntax   => syntax(pathname),
-        :importer => self,
-        :custom      => { :sprockets_context => context }
+          filename: pathname.to_s,
+          syntax: syntax(pathname),
+          importer: self,
+          custom: { sprockets_context: context }
         )
       end
 
@@ -63,17 +63,17 @@ module Sprockets
       # a glob of files.
       def engine_from_glob(glob, base_path, options)
         context = options[:custom][:sprockets_context]
-        imports = resolve_glob(context, glob, base_path).inject('') do |imports, path|
+        imports = resolve_glob(context, glob, base_path).reduce('') do |imports, path|
           context.depend_on path
           relative_path = path.relative_path_from Pathname.new(base_path).dirname
           imports << %(@import "#{relative_path}";\n)
         end
         return nil if imports.empty?
         ::Sass::Engine.new imports, options.merge(
-        :filename => base_path.to_s,
-        :syntax   => syntax(base_path.to_s),
-        :importer => self,
-        :custom      => { :sprockets_context => context }
+          filename: base_path.to_s,
+          syntax: syntax(base_path.to_s),
+          importer: self,
+          custom: { sprockets_context: context }
         )
       end
 
@@ -84,12 +84,16 @@ module Sprockets
         paths, root_path = possible_files(context, path, base_path)
         if Sprockets::Sass.version_of_sprockets >= 3
           paths.each do |file|
-            found_item  = context.resolve(file.to_s, load_paths: context.environment.paths, base_path: root_path , accept: syntax_mime_type(path)) rescue nil
-            return found_item if !found_item.nil?  && asset_requirable?(context, found_item)
+            found_item = begin
+                            context.resolve(file.to_s, load_paths: context.environment.paths, base_path: root_path, accept: syntax_mime_type(path))
+                          rescue
+                            nil
+                          end
+            return found_item if !found_item.nil? && asset_requirable?(context, found_item)
           end
         else
           paths.each do |file|
-            context.resolve(file.to_s) do  |found|
+            context.resolve(file.to_s) do |found|
               return found if context.asset_requirable?(found)
             end
           end
@@ -100,7 +104,11 @@ module Sprockets
 
       def asset_requirable?(context, path)
         available_content_types = ['text/css', syntax_mime_type(path), "text/#{syntax(path)}+ruby"]
-        pathname = context.resolve(path.to_s) rescue nil
+        pathname = begin
+                     context.resolve(path.to_s)
+                   rescue
+                     nil
+                   end
         return false if pathname.nil?
         path_content_type, attributes = content_type_of_path(context, path)
         if Sprockets::Sass.version_of_sprockets >= 4
@@ -119,7 +127,7 @@ module Sprockets
         path_with_glob = base_path.dirname.join(glob).to_s
 
         Pathname.glob(path_with_glob).sort.select do |path|
-          asset_requirable =  context.respond_to?(:asset_requirable?) ? context.asset_requirable?(path) : asset_requirable?(context, path)
+          asset_requirable = context.respond_to?(:asset_requirable?) ? context.asset_requirable?(path) : asset_requirable?(context, path)
           path != context.pathname && asset_requirable
         end
       end
@@ -131,12 +139,12 @@ module Sprockets
         base_path = Pathname.new(base_path).dirname
         base_name = path.basename
         partial_path = partialize_path(path)
-        additional_paths = [Pathname.new("#{path}.css"),  Pathname.new("#{partial_path}.css"),  Pathname.new("#{path}.css.#{syntax(path)}") ,  Pathname.new("#{partial_path}.css.#{syntax(path)}")]
+        additional_paths = [Pathname.new("#{path}.css"), Pathname.new("#{partial_path}.css"), Pathname.new("#{path}.css.#{syntax(path)}"), Pathname.new("#{partial_path}.css.#{syntax(path)}")]
         initial_paths = additional_paths.concat([path, partial_path])
         paths = initial_paths
 
         if Sprockets::Sass.version_of_sprockets >= 3
-          relatives = paths.map {|path_detected| path_detected.to_s.start_with?('.') ? Pathname.new(path_detected) : Pathname.new(path_detected.to_s.prepend('./')) }
+          relatives = paths.map { |path_detected| path_detected.to_s.start_with?('.') ? Pathname.new(path_detected) : Pathname.new(path_detected.to_s.prepend('./')) }
           file_level = path.to_s.split(File::SEPARATOR).size
           upper_levels = []
           file_level.times do |index|
@@ -154,8 +162,8 @@ module Sprockets
           paths = paths.unshift(relatives)
         end
         # Find base_path's root
-        env_root_paths = context.environment.paths.map {|p| Pathname.new(p) }
-        root_path = env_root_paths.detect do |env_root_path|
+        env_root_paths = context.environment.paths.map { |p| Pathname.new(p) }
+        root_path = env_root_paths.find do |env_root_path|
           base_path.to_s.start_with?(env_root_path.to_s)
         end
         root_path ||= Pathname.new(context.root_path)
@@ -202,19 +210,21 @@ module Sprockets
         classes
       end
 
-
       def content_type_of_path(context, path)
         if Sprockets::Sass.version_of_sprockets < 4
-        attributes = context.environment.respond_to?(:attributes_for) ? context.environment.attributes_for(path) : context.environment.send(:parse_path_extnames, path.to_s)
-        content_type = attributes.respond_to?(:content_type) ? attributes.content_type : attributes[1]
+          attributes = context.environment.respond_to?(:attributes_for) ? context.environment.attributes_for(path) : context.environment.send(:parse_path_extnames, path.to_s)
+          content_type = attributes.respond_to?(:content_type) ? attributes.content_type : attributes[1]
         else
-          pathname = context.resolve(path.to_s) rescue nil
+          pathname = begin
+                       context.resolve(path.to_s)
+                     rescue
+                       nil
+                     end
           content_type = pathname.nil? ? nil : pathname.to_s.scan(/\?type\=(.*)/).flatten.first unless pathname.nil?
           attributes = {}
         end
         [content_type, attributes]
       end
-
 
       # Internal: Run processors on filename and data.
       #
@@ -230,7 +240,7 @@ module Sprockets
         input = {
           environment: context.environment,
           cache: context.environment.cache,
-          uri: path.to_s ,
+          uri: path.to_s,
           filename: path.to_s,
           load_path: context.environment.paths,
           name: File.basename(path),
@@ -243,22 +253,22 @@ module Sprockets
           begin
             result = processor.call(input)
             case result
-            when NilClass
+              when NilClass
               # noop
-            when Hash
-              data = result[:data] if result.key?(:data)
-              context.metadata.merge!(result)
-              context.metadata.delete(:data)
-              if result.key?(:required)
-                result[:required].each do |file|
-                  file_asset = context.environment.load(file)
-                  data = data + process(processors, context, file_asset.filename)
+              when Hash
+                data = result[:data] if result.key?(:data)
+                context.metadata.merge!(result)
+                context.metadata.delete(:data)
+                if result.key?(:required)
+                  result[:required].each do |file|
+                    file_asset = context.environment.load(file)
+                    data += process(processors, context, file_asset.filename)
+                  end
                 end
-              end
-            when String
-              data = result
-            else
-              raise Error, "invalid processor return type: #{result.class}"
+              when String
+                data = result
+              else
+                raise Error, "invalid processor return type: #{result.class}"
             end
           end
         end
@@ -266,20 +276,19 @@ module Sprockets
         data
       end
 
-
       # Returns the string to be passed to the Sass engine. We use
       # Sprockets to process the file, but we remove any Sass processors
       # because we need to let the Sass::Engine handle that.
-      def evaluate(context,  path)
+      def evaluate(context, path)
         content_type, attributes = content_type_of_path(context, path)
         engines = attributes.respond_to?(:engines) ? attributes.engines : []
-        preprocessors =  Sprockets::Sass.version_of_sprockets >= 3 ? context.environment.preprocessors[content_type].map {|a| a.class == Class ? a : a.class } : context.environment.preprocessors(content_type)
-        available_transformers = context.environment.respond_to?(:transformers) ?  context.environment.transformers[content_type] : {}
+        preprocessors = Sprockets::Sass.version_of_sprockets >= 3 ? context.environment.preprocessors[content_type].map { |a| a.class == Class ? a : a.class } : context.environment.preprocessors(content_type)
+        available_transformers = context.environment.respond_to?(:transformers) ? context.environment.transformers[content_type] : {}
         additional_transformers = available_transformers.key?(syntax_mime_type(path)) ? available_transformers[syntax_mime_type(path)] : []
         additional_transformers = additional_transformers.is_a?(Array) ? additional_transformers : [additional_transformers]
-        processors =  additional_transformers.reverse + preprocessors + engines.reverse
-        processors.delete_if { |processor|  filtered_processor_classes.include?(processor) || filtered_processor_classes.any?{|filtered_processor| !processor.is_a?(Proc)  && processor < filtered_processor  } }
-        context.respond_to?(:evaluate) ? context.evaluate(path, :processors => processors) : process(processors, context , path)
+        processors = additional_transformers.reverse + preprocessors + engines.reverse
+        processors.delete_if { |processor| filtered_processor_classes.include?(processor) || filtered_processor_classes.any? { |filtered_processor| !processor.is_a?(Proc) && processor < filtered_processor } }
+        context.respond_to?(:evaluate) ? context.evaluate(path, processors: processors) : process(processors, context, path)
       end
     end
   end

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'sprockets'
 require 'sprockets/sass/version'
 require 'sprockets/sass/utils'
@@ -24,7 +25,6 @@ module Sprockets
       def version_of_sprockets
         Sprockets::VERSION.split('.')[0].to_i
       end
-
     end
 
     @options = {}
@@ -80,7 +80,7 @@ module Sprockets
       register_transformer 'application/sass+ruby', 'text/css', Sprockets::ERBProcessor
     end
     args = ['.sass', Sprockets::Sass::SassTemplate]
-    args << { mime_type: 'text/css', extensions: ['.sass', '.css.sass'],  silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
+    args << { mime_type: 'text/css', extensions: ['.sass', '.css.sass'], silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
     register_engine(*args)
     args = ['.scss', Sprockets::Sass::ScssTemplate]
     args << { mime_type: 'text/css', extensions: ['.scss', '.css.scss'], silence_deprecation: true } if Sprockets::Sass.version_of_sprockets >= 3
@@ -120,11 +120,10 @@ module Sprockets
     # AND ALSO TRANSFORMERS CAN'T BE UNREGISTERED !!! :(
     #
     # In previous version of Sprockets this would work, because they used engines ( which work like  preprocessors )
-    register_preprocessor 'text/sass',  Sprockets::Sass::SassTemplate
+    register_preprocessor 'text/sass', Sprockets::Sass::SassTemplate
     register_preprocessor 'text/scss', Sprockets::Sass::ScssTemplate
     register_preprocessor 'text/css',  Sprockets::Sass::SassTemplate
     register_preprocessor 'text/css', Sprockets::Sass::ScssTemplate
 
   end
-
 end

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'sass'
 
 module Sprockets
@@ -8,6 +9,7 @@ module Sprockets
       def self.default_mime_type
         'text/css'
       end
+
       # Public: Return singleton instance with default options.
       #
       # Returns SassCompressor object.
@@ -25,8 +27,8 @@ module Sprockets
 
       attr_reader :cache_key, :input, :filename, :source, :options
 
-      def initialize(options = {}, &block)
-        @default_options  = {
+      def initialize(options = {})
+        @default_options = {
           syntax: :scss,
           cache: false,
           read_cache: false,
@@ -34,7 +36,7 @@ module Sprockets
           default_encoding: Encoding.default_external || 'utf-8'
         }
         @options = @default_options
-        @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{VERSION}:#{Sprockets::Sass::Utils.digest(options)}".freeze
+        @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{VERSION}:#{Sprockets::Sass::Utils.digest(options)}"
         if options.is_a?(Hash)
           @input = options
           @filename = options[:filename]
@@ -42,7 +44,7 @@ module Sprockets
           @options = @options.merge(options)
         else
           @filename = options
-          @source = block_given? ? block.call : nil
+          @source = block_given? ? yield : nil
         end
       end
 
@@ -56,8 +58,7 @@ module Sprockets
         run(data)
       end
 
-
-      def render(context, empty_hash_wtf)
+      def render(context, _empty_hash_wtf)
         @context = context
         run(filename)
       end
@@ -65,7 +66,6 @@ module Sprockets
       def self.compress(input)
         call(input)
       end
-
 
       def run(string)
         data = File.exist?(string.to_s) ? Sprockets::Sass::Utils.read_file_binary(string, options) : string
@@ -87,7 +87,6 @@ module Sprockets
           data
         end
       end
-
     end
   end
 end

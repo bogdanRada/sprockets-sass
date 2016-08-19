@@ -1,8 +1,8 @@
+# frozen_string_literal: true
 module Sprockets
   module Sass
-    class  Utils
+    class Utils
       class << self
-
         def read_file_binary(file, options = {})
           default_encoding = options.delete :default_encoding
 
@@ -15,7 +15,7 @@ module Sprockets
               data.force_encoding(default_encoding)
             end
 
-            if !data.valid_encoding?
+            unless data.valid_encoding?
               raise Encoding::InvalidByteSequenceError, "#{filename} is not valid #{data.encoding}"
             end
           end
@@ -23,7 +23,7 @@ module Sprockets
         end
 
         def digest(options)
-          options.delete_if{|key, value| value.is_a?(Pathname) } if options.is_a?(Hash)
+          options.delete_if { |_key, value| value.is_a?(Pathname) } if options.is_a?(Hash)
           options = options.to_s unless options.is_a?(Hash)
           if defined?(Sprockets::DigestUtils)
             Sprockets::DigestUtils.digest(options)
@@ -33,9 +33,8 @@ module Sprockets
           end
         end
 
-
         def read_template_file(file)
-          data = File.open(file, 'rb') { |io| io.read }
+          data = File.open(file, 'rb', &:read)
           if data.respond_to?(:force_encoding)
             # Set it to the default external (without verifying)
             data.force_encoding(Encoding.default_external) if Encoding.default_external
@@ -64,7 +63,6 @@ module Sprockets
             base.send(:define_method, sym, method)
           end
         end
-
       end
     end
   end

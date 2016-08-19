@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'sass'
 
 module Sprockets
@@ -72,14 +73,14 @@ module Sprockets
       #   background: image-url("image.jpg");                // background: url("/assets/image.jpg");
       #   background: image-url("image.jpg", $digest: true); // background: url("/assets/image-27a8f1f96afd8d4c67a59eb9447f45bd.jpg");
       #
-      def image_url(source, options = {}, cache_buster = nil)
+      def image_url(source, options = {}, _cache_buster = nil)
         # Work with the Compass #image_url API
         if options.respond_to? :value
           case options.value
-          when true
-            return image_path source
-          else
-            options = {}
+            when true
+              return image_path source
+            else
+              options = {}
           end
         end
         ::Sass::Script::String.new "url(#{image_path(source, options)})"
@@ -111,16 +112,16 @@ module Sprockets
         # Work with the Compass #font_url API
         if options.respond_to? :value
           case options.value
-          when true
-            return font_path source
-          else
-            options = {}
+            when true
+              return font_path source
+            else
+              options = {}
           end
         end
         ::Sass::Script::String.new "url(#{font_path(source, options)})"
       end
 
-      protected
+    protected
 
       # Returns a reference to the Sprocket's context through
       # the importer.
@@ -144,20 +145,20 @@ module Sass::Script::Functions
 
   # Hack to ensure previous API declarations (by Compass or whatever)
   # don't take precedence.
-  [:asset_path, :asset_url, :image_path, :image_url, :font_path, :font_url, :asset_data_uri].each do |method|
+  %i(asset_path asset_url image_path image_url font_path font_url asset_data_uri).each do |method|
     defined?(@signatures) && @signatures.delete(method)
   end
 
-  declare :asset_path,     [:source], :var_kwargs => true
-  declare :asset_path,     [:source, :kind]
-  declare :asset_url,      [:source], :var_kwargs => true
-  declare :asset_url,      [:source, :kind]
-  declare :image_path,     [:source], :var_kwargs => true
-  declare :image_url,      [:source], :var_kwargs => true
-  declare :image_url,      [:source, :only_path]
-  declare :image_url,      [:source, :only_path, :cache_buster]
-  declare :font_path,      [:source], :var_kwargs => true
-  declare :font_url,       [:source], :var_kwargs => true
-  declare :font_url,       [:source, :only_path]
+  declare :asset_path,     [:source], var_kwargs: true
+  declare :asset_path,     %i(source kind)
+  declare :asset_url,      [:source], var_kwargs: true
+  declare :asset_url,      %i(source kind)
+  declare :image_path,     [:source], var_kwargs: true
+  declare :image_url,      [:source], var_kwargs: true
+  declare :image_url,      %i(source only_path)
+  declare :image_url,      %i(source only_path cache_buster)
+  declare :font_path,      [:source], var_kwargs: true
+  declare :font_url,       [:source], var_kwargs: true
+  declare :font_url,       %i(source only_path)
   declare :asset_data_uri, [:source]
 end
