@@ -101,8 +101,8 @@ module Sprockets
 
     # @TODO [ONLY Sprockets >= 4] The importer is messed up , Neeed to fix it,
     # In previous versions, the preprocessors , engines and transformers registered,
-    # would have been a list of Classes ( with the actual class names of the preprocessors ) and Procs ( The transformers  which don't need to be filtered )
-    # The only thing that needed to be filtred was the preprocessors which was easy by checking the class name
+    # would have been a list of Classes ( with the actual class names of the preprocessors or engines ) and Procs ( The transformers  which don't need to be filtered )
+    # The only thing that needed to be filtred was the preprocessors and engines which was easy by checking the class name
     #
     # Sprockets 4 though registration messes everything up because now because uses transformers for SASS and SCSS,
     # and there is no way of telling from a Proc what transformer was used to create the Proc.
