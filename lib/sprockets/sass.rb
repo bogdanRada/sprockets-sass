@@ -91,6 +91,7 @@ module Sprockets
     # and uses transformers to transform to css
 
     # The mime types are already registered, but added here just in case , to have some history about what we used
+    # Doesn't affect anything
     register_mime_type 'text/sass', extensions: ['.sass', '.css.sass']
     register_mime_type 'text/scss', extensions: ['.scss', '.css.scss']
 
@@ -98,12 +99,17 @@ module Sprockets
     register_transformer 'application/scss+ruby', 'text/scss', Sprockets::ERBProcessor
     register_transformer 'application/sass+ruby', 'text/sass', Sprockets::ERBProcessor
 
-    # @TODO [ONLY Sprockets >= 4] Find a way to use transformers instead and fix conflict with Sprockets 4 transformers,
-    # which seem to be executed before our transformers. This works somehow, but not quite,
-    # The ERBProcessor is called only after the preprocessor so we will have to explicitly call
-    # this tranformer before our preprocessor in order for this to work
+    # @TODO [ONLY Sprockets >= 4] The importer is messed up , Neeed to fix it,
+    # In previous versions, the preprocessors , engines and transformers registered,
+    # would have been a list of Classes ( with the actual class names of the preprocessors ) and Procs ( The transformers  which don't need to be filtered )
+    # The only thing that needed to be filtred was the preprocessors which was easy by checking the class name
     #
-    # In previous version of Sprockets this would work, because they used engines and preprocessors
+    # Sprockets 4 though registration messes everything up because now because uses transformers for SASS and SCSS,
+    # and there is no way of telling from a Proc what transformer was used to create the Proc.
+    # also uses anonymous classes which can't be filtered. Still trying to investigate how to filter them.
+    # And some of the classes don't respond to call but to render. Very Crazy stuff here going on!!!
+    #
+    # In previous version of Sprockets this would work, because they used engines ( which work like  preprocessors )
     register_preprocessor 'text/sass',  Sprockets::Sass::SassTemplate
     register_preprocessor 'text/scss', Sprockets::Sass::ScssTemplate
     register_preprocessor 'text/css',  Sprockets::Sass::SassTemplate
