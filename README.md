@@ -158,13 +158,13 @@ require "sass"
 map "/assets" do
   environment = Sprockets::Environment.new
   environment.append_path "assets/stylesheets"
-  
+
   Sprockets::Helpers.configure do |config|
     config.environment = environment
     config.prefix      = "/assets"
     config.digest      = false
   end
-  
+
   run environment
 end
 
@@ -201,24 +201,13 @@ Install dependencies using bundler:
 bundle install
 ```
 
+sprocket-sass is tested against numerous versions of Sass, Compoass, and Sprockets using [appraisal](https://github.com/thoughtbot/appraisal).
+This will install all the gems and run the tests against all versions
 Run tests:
 
 ``` bash
-rake
+bundle exec rake
 ```
-
-sprocket-sass is tested against numerous versions of Sass, Compoass, and Sprockets using [appraisal](https://github.com/thoughtbot/appraisal). First install all the gems:
-
-``` bash
-rake appraisal:install
-```
-
-Then run the entire test suite:
-
-``` bash
-rake appraisal
-```
-
 
 Copyright
 ---------
