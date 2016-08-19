@@ -17,8 +17,9 @@ describe Sprockets::Sass::SassTemplate do
 
   after :each do
     @root.destroy!
+    Sprockets::Sass.options[:importer] = nil
   end
-
+  
   it 'allow specifying custom sass importer' do
     @assets.file 'main.css.scss', %(@import "dep")
     @assets.file 'dep.css.scss', "$color: blue;\nbody { color: $color; }"

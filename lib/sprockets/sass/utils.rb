@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 module Sprockets
   module Sass
+    # utility functions that can be used statically from anywhere
     class Utils
       class << self
         def read_file_binary(file, options = {})

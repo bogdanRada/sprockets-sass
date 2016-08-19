@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 module Sprockets
   module Sass
+    # Preprocessor for SASS files
     class SassTemplate
       VERSION = '1'
 
@@ -32,33 +33,41 @@ module Sprockets
       attr_reader :cache_key, :filename, :source, :context, :options
 
       def initialize(options = {}, &block)
-        default_options = { default_encoding: Encoding.default_external || 'utf-8' }
+        @default_options = { default_encoding: Encoding.default_external || 'utf-8' }
         initialize_engine
         if options.is_a?(Hash)
-          @cache_version = options[:cache_version] || VERSION
-          @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{@cache_version}:#{Sprockets::Sass::Utils.digest(options)}"
-          @filename = options[:filename]
-          @source = options[:data]
-          @options = options.merge(default_options)
-          @importer_class = options[:importer]
-          @sass_config = options[:sass_config] || {}
-          @input = options
-          @functions = Module.new do
-            include Sprockets::Helpers if defined?(Sprockets::Helpers)
-            include Sprockets::Sass::Functions
-            include options[:functions] if options[:functions]
-            class_eval(&block) if block_given?
-          end
+          instantiate_with_options(options, &block)
         else
-          @filename = options
-          @source = yield
-          @options = default_options
-          @cache_version = VERSION
-          @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{VERSION}:#{Sprockets::Sass::Utils.digest(options)}"
-          @functions = Module.new do
-            include Sprockets::Helpers if defined?(Sprockets::Helpers)
-            include Sprockets::Sass::Functions
-          end
+          instantiate_with_filename_and_source(options, &block)
+        end
+      end
+
+      def instantiate_with_filename_and_source(options)
+        @filename = options
+        @source = block_given? ? yield : nil
+        @options = @default_options
+        @cache_version = VERSION
+        @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{VERSION}:#{Sprockets::Sass::Utils.digest(options)}"
+        @functions = Module.new do
+          include Sprockets::Helpers if defined?(Sprockets::Helpers)
+          include Sprockets::Sass::Functions
+        end
+      end
+
+      def instantiate_with_options(options, &block)
+        @cache_version = options[:cache_version] || VERSION
+        @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{@cache_version}:#{Sprockets::Sass::Utils.digest(options)}"
+        @filename = options[:filename]
+        @source = options[:data]
+        @options = options.merge(@default_options)
+        @importer_class = options[:importer]
+        @sass_config = options[:sass_config] || {}
+        @input = options
+        @functions = Module.new do
+          include Sprockets::Helpers if defined?(Sprockets::Helpers)
+          include Sprockets::Sass::Functions
+          include options[:functions] if options[:functions]
+          class_eval(&block) if block_given?
         end
       end
 
@@ -134,49 +143,58 @@ module Sprockets
         options
       end
 
+      def default_sass_config
+        if defined?(Compass)
+          merge_sass_options Compass.sass_engine_options.dup, Sprockets::Sass.options
+        else
+          Sprockets::Sass.options.dup
+        end
+      end
+
       def default_sass_options
-        sass = if defined?(Compass)
-                 merge_sass_options Compass.sass_engine_options.dup, Sprockets::Sass.options
-               else
-                 Sprockets::Sass.options.dup
-               end
+        sass = default_sass_config
         sass = merge_sass_options(sass.dup, @sass_config) if defined?(@sass_config) && @sass_config.is_a?(Hash)
         sass
       end
 
-      def cache_store(context)
-        return nil if context.environment.cache.nil?
-
-        if Sprockets::Sass.version_of_sprockets < 3
-          if defined?(Sprockets::SassCacheStore)
-            Sprockets::SassCacheStore.new context.environment
-          else
-            Sprockets::Sass::LegacyCacheStore.new context.environment
-          end
+      def legacy_cache_store(context)
+        if defined?(Sprockets::SassCacheStore)
+          Sprockets::SassCacheStore.new context.environment
         else
-          if defined?(Sprockets::SassProcessor::CacheStore)
-            Sprockets::SassProcessor::CacheStore.new(@input[:cache], @cache_version)
-          else
-            Sprockets::Sass::CacheStore.new(@input[:cache], @cache_version)
-          end
+          Sprockets::Sass::LegacyCacheStore.new context.environment
         end
       end
 
-      def syntax_file(path)
-        path.to_s.include?('.sass') ? :sass : :scss
+      def improved_cache_store(_context, cache, version)
+        if defined?(Sprockets::SassProcessor::CacheStore)
+          Sprockets::SassProcessor::CacheStore.new(cache, version)
+        else
+          Sprockets::Sass::CacheStore.new(cache, version)
+        end
       end
 
-      def sass_options
-        # Allow the use of custom SASS importers, making sure the
-        # custom importer is a `Sprockets::Sass::Importer`
-        importer = if defined?(@importer_class) && !@importer_class.nil?
-                     @importer_class
-                   elsif default_sass_options.key?(:importer) && default_sass_options[:importer].is_a?(Importer)
-                     default_sass_options[:importer]
-                   else
-                     Sprockets::Sass::Importer.new
-                   end
+      def build_cache_store(context)
+        return nil if context.environment.cache.nil?
+        if Sprockets::Sass.version_of_sprockets < 3
+          legacy_cache_store(context)
+        else
+          improved_cache_store(context, @input[:cache], @cache_version)
+        end
+      end
 
+      # Allow the use of custom SASS importers, making sure the
+      # custom importer is a `Sprockets::Sass::Importer`
+      def fetch_importer_class
+        if defined?(@importer_class) && !@importer_class.nil?
+          @importer_class
+        elsif default_sass_options.key?(:importer) && default_sass_options[:importer].is_a?(Importer)
+          default_sass_options[:importer]
+        else
+          Sprockets::Sass::Importer.new
+        end
+      end
+
+      def fetch_sprockets_options
         sprockets_options = {
           context: context,
           environment: context.environment,
@@ -185,13 +203,19 @@ module Sprockets
         if context.respond_to?(:metadata)
           sprockets_options.merge(load_paths: context.environment.paths + default_sass_options[:load_paths])
         end
+        sprockets_options
+      end
+
+      def sass_options
+        importer = fetch_importer_class
+        sprockets_options = fetch_sprockets_options
 
         sass = merge_sass_options(default_sass_options, options).merge(
           filename: filename,
           line: 1,
           syntax: self.class.syntax,
           cache: true,
-          cache_store: cache_store(context),
+          cache_store: build_cache_store(context),
           importer: importer,
           custom: { sprockets_context: context },
           sprockets: sprockets_options

@@ -7,12 +7,8 @@ require 'compass'
 require 'test_construct'
 
 RSpec.configure do |config|
-  require 'rspec/expectations'
-  config.include RSpec::Matchers
   config.include TestConstruct::Helpers
-  config.mock_with :rspec
 end
-
 
 Compass.configuration do |compass|
   compass.line_comments = false

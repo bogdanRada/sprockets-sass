@@ -7,7 +7,9 @@ require 'sprockets/sass/scss_template'
 require 'sprockets/sass/functions'
 require 'json'
 
+# the module of Sprockets
 module Sprockets
+  # The internal Sass module used to load and acessing configuration
   module Sass
     autoload :LegacyCacheStore, 'sprockets/sass/legacy_cache_store'
     autoload :CacheStore, 'sprockets/sass/cache_store'
@@ -31,7 +33,7 @@ module Sprockets
     @add_sass_functions = true
   end
 
-  begin # Newwer sprockets -- Need to make sure this are defined
+  begin
     require 'sprockets/directive_processor'
     require 'sprockets/sass_processor'
     require 'sprockets/sassc_processor'

@@ -1,16 +1,16 @@
 AllCops:
   Exclude:
-    - celluloid_pubsub.gemspec
+    - sprockets-sass.gemspec
+    - lib/sprockets/sass.rb
     - bin/**/*
     - Guardfile
     - vendor/**/**
-    - examples/**/**
     - spec/**/*
     - Gemfile
     - Rakefile
-
+    
   TargetRubyVersion: 2.3
-  
+
 ClassLength:
   Max: 500
 

@@ -3,6 +3,7 @@ require 'sass'
 
 module Sprockets
   module Sass
+    # Class used to compress CSS files
     class Compressor
       VERSION = '1'
 

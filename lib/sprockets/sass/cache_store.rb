@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 module Sprockets
   module Sass
-    # Internal: Cache wrapper for Sprockets cache adapter.
+    # Internal: Cache wrapper for Sprockets cache adapter. (Sprockets >= 3)
     class CacheStore < ::Sass::CacheStores::Base
       VERSION = '1'
 

@@ -3,6 +3,7 @@ require 'sass'
 
 module Sprockets
   module Sass
+    # The legacy cache store used for Sprockets 2.x
     class LegacyCacheStore < ::Sass::CacheStores::Base
       attr_reader :environment
 
@@ -15,11 +16,10 @@ module Sprockets
       end
 
       def _retrieve(key, version, sha)
-        if obj = environment.send(:cache_get, "sass/#{key}")
-          return unless obj[:version] == version
-          return unless obj[:sha] == sha
-          obj[:obj]
-        end
+        obj = environment.send(:cache_get, "sass/#{key}")
+        return unless obj.is_a?(Hash)
+        return if obj[:version] != version || obj[:sha] != sha
+        obj[:obj]
       end
     end
   end
