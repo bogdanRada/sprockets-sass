@@ -395,30 +395,31 @@ end
   end
 
 
-#   describe Sprockets::Sass::SassTemplate do
-#     let(:template) do
-#       Sprockets::Sass::SassTemplate.new(@assets.file 'bullet.gif') do
-#         # nothing
-#       end
-#     end
-#     describe 'initialize_engine' do
-#
-#       it 'does add Sass functions if sprockets-helpers is not available' do
-#         Sprockets::Sass::SassTemplate.sass_functions_initialized = false
-#         Sprockets::Sass.add_sass_functions = true
-#         Sprockets::Sass::SassTemplate.any_instance.should_receive(:require).with('sprockets/helpers').and_raise LoadError
-#         Sprockets::Sass::SassTemplate.any_instance.should_not_receive(:require).with 'sprockets/sass/functions'
-#         template
-#         expect(Sprockets::Sass::SassTemplate.engine_initialized?).to be_falsy
-#       end
-#
-#       it 'does not add Sass functions if add_sass_functions is false' do
-#         Sprockets::Sass.add_sass_functions = false
-#         template.should_not_receive(:require).with 'sprockets/sass/functions'
-#         template.initialize_engine
-#         expect(Sprockets::Sass::SassTemplate.engine_initialized?).to be_falsy
-#         Sprockets::Sass.add_sass_functions = true
-#       end
-#     end
-#   end
+  describe Sprockets::Sass::SassTemplate do
+
+    let(:template) do
+      Sprockets::Sass::SassTemplate.new(@assets.file 'bullet.gif') do
+        # nothing
+      end
+    end
+    describe 'initialize_engine' do
+
+      it 'does add Sass functions if sprockets-helpers is not available' do
+        Sprockets::Sass::SassTemplate.sass_functions_initialized = false
+        Sprockets::Sass.add_sass_functions = true
+        Sprockets::Sass::SassTemplate.any_instance.should_receive(:require).with('sprockets/helpers').and_raise LoadError
+        Sprockets::Sass::SassTemplate.any_instance.should_not_receive(:require).with 'sprockets/sass/functions'
+        template
+        expect(Sprockets::Sass::SassTemplate.engine_initialized?).to be_falsy
+      end
+
+      it 'does not add Sass functions if add_sass_functions is false' do
+        Sprockets::Sass.add_sass_functions = false
+        template.should_not_receive(:require).with 'sprockets/sass/functions'
+        template.initialize_engine
+        expect(Sprockets::Sass::SassTemplate.engine_initialized?).to be_falsy
+        Sprockets::Sass.add_sass_functions = true
+      end
+    end
+  end
  end
