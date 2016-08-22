@@ -50,11 +50,10 @@ module Sprockets
         end
 
         def get_class_by_version(class_name)
-          available_versions = Sprockets::Sass::Registration::ACTIONS.map{|hash| hash[:min]}.concat([Sprockets::Sass::Utils.version_of_sprockets, Sprockets::Sass::Registration::DEFAULT_ACTION[:min]]).compact.uniq
-          classes = available_versions.sort.reverse.select do |version|
+          classes = Sprockets::Sass::Registration::AVAILABLE_VERSIONS.map do |version|
             constantize("Sprockets::Sass::V#{version}::#{class_name}") rescue  nil
-          end
-         clasess.first
+          end.compact
+         classes.first
         end
 
 

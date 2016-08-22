@@ -1,18 +1,12 @@
 # frozen_string_literal: true
 module Sprockets
   module Sass
-    module V3
+    module V4
       # Preprocessor for SASS files
-      class SassTemplate < Sprockets::Sass::V2::SassTemplate
+      class SassTemplate < Sprockets::Sass::V3::SassTemplate
         
-        def build_cache_store(context)
-          return nil if context.environment.cache.nil?
-          cache, version = @input[:cache], @cache_version
-          if defined?(Sprockets::SassProcessor::CacheStore)
-            Sprockets::SassProcessor::CacheStore.new(cache, version)
-          else
-            Sprockets::Sass::V3::CacheStore.new(cache, version)
-          end
+        def self.default_mime_type
+          "text/#{syntax}"
         end
 
         # Allow the use of custom SASS importers, making sure the
@@ -23,7 +17,7 @@ module Sprockets
           elsif default_sass_options.key?(:importer) && default_sass_options[:importer].is_a?(Importer)
             default_sass_options[:importer]
           else
-            Sprockets::Sass::V3::Importer.new
+            Sprockets::Sass::V4::Importer.new
           end
         end
 

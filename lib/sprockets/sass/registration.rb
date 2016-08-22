@@ -4,6 +4,8 @@ module Sprockets
 
       attr_reader :klass
 
+      AVAILABLE_VERSIONS = [4, 3, 2]
+
       DEFAULT_ACTION = { min_comparison: '>=' , min: 2, max_comparison: '<', max: 3,   action: :register_sprockets_legacy }
 
       ACTIONS = [
@@ -27,14 +29,14 @@ module Sprockets
       end
 
       def require_libraries
-        require_standard_libraries(version_selected -1) if sprockets_version >= 4
+        require_standard_libraries(version_selected - 1) if sprockets_version >= 3
         require_standard_libraries(version_selected)
         require 'sprockets/sass/functions'
       end
-      
+
       private
 
-      def require_standard_libraris(version)
+      def require_standard_libraries(version)
         %w{ cache_store compressor functions importer sass_template scss_template}.each do |filename|
           require "sprockets/sass/v#{version}/#{filename}"
         end

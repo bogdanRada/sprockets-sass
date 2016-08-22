@@ -4,78 +4,15 @@ module Sprockets
   module Sass
     module V3
       # class used for importing files from SCCS and SASS files
-      class Importer < ::Sass::Importers::Base
+      class Importer < Sprockets::Sass::V2::Importer
         GLOB = /\*|\[.+\]/
-
-        # @see Sass::Importers::Base#find_relative
-        def find_relative(path, base_path, options)
-          if path.to_s =~ GLOB
-            engine_from_glob(path, base_path, options)
-          else
-            engine_from_path(path, base_path, options)
-          end
-        end
-
-        # @see Sass::Importers::Base#find
-        def find(path, options)
-          engine_from_path(path, nil, options)
-        end
-
-        # @see Sass::Importers::Base#mtime
-        def mtime(path, _options)
-          if pathname = resolve(path)
-            pathname.mtime
-          end
-        rescue Errno::ENOENT
-          nil
-        end
-
-        # @see Sass::Importers::Base#key
-        def key(path, _options)
-          path = Pathname.new(path)
-          ["#{self.class.name}:#{path.dirname.expand_path}", path.basename]
-        end
-
-        # @see Sass::Importers::Base#to_s
-        def to_s
-          inspect
-        end
 
         protected
 
-        # Create a Sass::Engine from the given path.
-        def engine_from_path(path, base_path, options)
-          context = options[:custom][:sprockets_context]
-          (pathname = resolve(context, path, base_path)) || (return nil)
-          context.depend_on pathname
-          ::Sass::Engine.new evaluate(context, pathname), options.merge(
-          filename: pathname.to_s,
-          syntax: syntax(pathname),
-          importer: self,
-          custom: { sprockets_context: context }
-          )
-        end
 
-        # Create a Sass::Engine that will handle importing
-        # a glob of files.
-        def engine_from_glob(glob, base_path, options)
-          context = options[:custom][:sprockets_context]
-          engine_imports = resolve_glob(context, glob, base_path).reduce('') do |imports, path|
-            context.depend_on path
-            relative_path = path.relative_path_from Pathname.new(base_path).dirname
-            imports << %(@import "#{relative_path}";\n)
-          end
-          return nil if engine_imports.empty?
-          ::Sass::Engine.new engine_imports, options.merge(
-          filename: base_path.to_s,
-          syntax: syntax(base_path.to_s),
-          importer: self,
-          custom: { sprockets_context: context }
-          )
-        end
-
-        def resolve_path_with_load_paths(context, path, root_path, file)
-          context.resolve(file.to_s, load_paths: context.environment.paths, base_path: root_path, accept: syntax_mime_type(path))
+        def resolve_path_with_load_paths(context, file)
+          context.resolve(file.to_s)
+          #load_paths: context.environment.paths, base_path: root_path, accept: syntax_mime_type(path))
         rescue
           nil
         end
@@ -85,19 +22,10 @@ module Sprockets
         # style paths.
         def resolve(context, path, base_path)
           paths, root_path = possible_files(context, path, base_path)
-          if Sprockets::Sass::Utils.version_of_sprockets >= 3
-            paths.each do |file|
-              found_item = resolve_path_with_load_paths(context, path, root_path, file)
-              return found_item if !found_item.nil? && asset_requirable?(context, found_item)
-            end
-          else
-            paths.each do |file|
-              context.resolve(file.to_s) do |found|
-                return found if context.asset_requirable?(found)
-              end
-            end
+          paths.each do |file|
+            found_item = resolve_path_with_load_paths(context,file)
+            return found_item if !found_item.nil? && asset_requirable?(context, found_item)
           end
-
           nil
         end
 
@@ -105,23 +33,13 @@ module Sprockets
           ['text/css', syntax_mime_type(path), "text/#{syntax(path)}+ruby"]
         end
 
-        def resolve_path(context, path)
-          context.resolve(path.to_s)
-        rescue
-          nil
-        end
 
         def stat_of_pathname(context, pathname, path)
-          if Sprockets::Sass::Utils.version_of_sprockets >= 4
-            asset = context.environment.load(pathname)
-            context.environment.stat(asset.filename)
-          else
-            context.environment.stat(path)
-          end
+          context.environment.stat(path)
         end
 
         def asset_requirable?(context, path)
-          pathname = resolve_path(context, path)
+          pathname = resolve_path_with_load_paths(context, path)
           return false if pathname.nil?
           stat = stat_of_pathname(context, pathname, path)
           return false unless stat && stat.file?
@@ -136,7 +54,7 @@ module Sprockets
           path_with_glob = base_path.dirname.join(glob).to_s
 
           Pathname.glob(path_with_glob).sort.select do |path|
-            asset_requirable = context.respond_to?(:asset_requirable?) ? context.asset_requirable?(path) : asset_requirable?(context, path)
+            asset_requirable = asset_requirable?(context, path)
             path != context.pathname && asset_requirable
           end
         end
@@ -209,28 +127,19 @@ module Sprockets
         end
 
         def syntax_mime_type(path)
-          mime_type = Sprockets.respond_to?(:register_engine) ? 'text/css' : "text/#{syntax(path)}"
-          mime_type
+          "text/#{syntax(path)}"
         end
 
         def filtered_processor_classes
-          classes = [Sprockets::Sass::SassTemplate, Sprockets::Sass::ScssTemplate]
-          classes << Sprockets::SassProcessor if defined?(Sprockets::SassProcessor)
-          classes << Sprockets::SasscProcessor if defined?(Sprockets::SasscProcessor)
+          classes = super
           classes << Sprockets::Preprocessors::DefaultSourceMap if defined?(Sprockets::Preprocessors::DefaultSourceMap)
           classes << Sprockets::SourceMapProcessor if defined?(Sprockets::SourceMapProcessor)
           classes
         end
 
         def content_type_of_path(context, path)
-          if Sprockets::Sass::Utils.version_of_sprockets < 4
-            attributes = context.environment.respond_to?(:attributes_for) ? context.environment.attributes_for(path) : context.environment.send(:parse_path_extnames, path.to_s)
-            content_type = attributes.respond_to?(:content_type) ? attributes.content_type : attributes[1]
-          else
-            pathname = resolve_path(context, path)
-            content_type = pathname.nil? ? nil : pathname.to_s.scan(/\?type\=(.*)/).flatten.first unless pathname.nil?
-            attributes = {}
-          end
+          attributes =  context.environment.send(:parse_path_extnames, path.to_s)
+          content_type = attributes[1]
           [content_type, attributes]
         end
 
@@ -312,13 +221,13 @@ module Sprockets
         end
 
         def get_context_transformers(context, content_type, path)
-          available_transformers = context.environment.respond_to?(:transformers) ? context.environment.transformers[content_type] : {}
+          available_transformers =  context.environment.transformers[content_type]
           additional_transformers = available_transformers.key?(syntax_mime_type(path)) ? available_transformers[syntax_mime_type(path)] : []
           additional_transformers.is_a?(Array) ? additional_transformers : [additional_transformers]
         end
 
         def get_engines_from_attributes(attributes)
-          attributes.respond_to?(:engines) ? attributes.engines : []
+          []
         end
 
         def get_all_processors_for_evaluate(context, content_type, attributes, path)
@@ -337,11 +246,7 @@ module Sprockets
         end
 
         def evaluate_path_from_context(context, path, processors)
-          if context.respond_to?(:evaluate)
-            context.evaluate(path, processors: processors)
-          else
-            process(processors, context, path)
-          end
+          process(processors, context, path)
         end
 
         # Returns the string to be passed to the Sass engine. We use
