@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require_relative '../v3/importer'
 module Sprockets
   module Sass
     module V4

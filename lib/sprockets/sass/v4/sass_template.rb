@@ -1,10 +1,11 @@
 # frozen_string_literal: true
+require_relative '../v3/sass_template'
 module Sprockets
   module Sass
     module V4
       # Preprocessor for SASS files
       class SassTemplate < Sprockets::Sass::V3::SassTemplate
-        
+
         def self.default_mime_type
           "text/#{syntax}"
         end

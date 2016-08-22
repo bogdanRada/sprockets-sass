@@ -7,10 +7,10 @@ module Sprockets
       AVAILABLE_VERSIONS = [4, 3, 2]
 
       DEFAULT_ACTION = { min_comparison: '>=' , min: 2, max_comparison: '<', max: 3,   action: :register_sprockets_legacy }
-
+      
       ACTIONS = [
         { min_comparison: '>=' , min: 3, max_comparison: '<', max: 4,   action: :register_sprockets_v3 },
-        { min_comparison: '>=' , min: 4,  action: :register_sprockets_v4 }
+    #    { min_comparison: '>=' , min: 4,  action: :register_sprockets_v4 }
       ]
 
       attr_reader :klass, :sprockets_version, :registration_instance, :action_details, :version_selected
@@ -29,8 +29,9 @@ module Sprockets
       end
 
       def require_libraries
-        require_standard_libraries(version_selected - 1) if sprockets_version >= 3
-        require_standard_libraries(version_selected)
+        AVAILABLE_VERSIONS.each do |version|
+          require_standard_libraries(version)
+        end
         require 'sprockets/sass/functions'
       end
 
@@ -38,7 +39,9 @@ module Sprockets
 
       def require_standard_libraries(version)
         %w{ cache_store compressor functions importer sass_template scss_template}.each do |filename|
-          require "sprockets/sass/v#{version}/#{filename}"
+          begin
+            require "sprockets/sass/v#{version}/#{filename}"
+          rescue LoadError; end
         end
       end
 
@@ -88,7 +91,7 @@ module Sprockets
 
 
       def sprockets_valid_version?(action_data)
-        if action_data.key?(:min) && action_data.key(:max)
+        if action_data.key?(:min) && action_data.key?(:max)
           @sprockets_version.send(action_data[:min_comparison], action_data[:min]) &&
           @sprockets_version.send(action_data[:max_comparison], action_data[:max])
         elsif action_data.key?(:min)

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require_relative './sass_template'
 module Sprockets
   module Sass
     module V3

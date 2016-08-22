@@ -50,10 +50,18 @@ module Sprockets
         end
 
         def get_class_by_version(class_name)
-          classes = Sprockets::Sass::Registration::AVAILABLE_VERSIONS.map do |version|
-            constantize("Sprockets::Sass::V#{version}::#{class_name}") rescue  nil
-          end.compact
-         classes.first
+          class_found = nil
+          if  Sprockets::Sass::Registration::AVAILABLE_VERSIONS.include?(version_of_sprockets)
+            class_found = constantize("Sprockets::Sass::V#{version_of_sprockets}::#{class_name}") rescue  nil
+          end
+          if class_found.nil?
+            classes = Sprockets::Sass::Registration::AVAILABLE_VERSIONS.map do |version|
+              constantize("Sprockets::Sass::V#{version}::#{class_name}") rescue  nil
+            end.compact
+            classes.first
+          else
+            class_found
+          end
         end
 
 

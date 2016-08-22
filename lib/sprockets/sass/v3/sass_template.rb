@@ -1,10 +1,11 @@
 # frozen_string_literal: true
+require_relative '../v2/sass_template'
 module Sprockets
   module Sass
     module V3
       # Preprocessor for SASS files
       class SassTemplate < Sprockets::Sass::V2::SassTemplate
-        
+
         def build_cache_store(context)
           return nil if context.environment.cache.nil?
           cache, version = @input[:cache], @cache_version

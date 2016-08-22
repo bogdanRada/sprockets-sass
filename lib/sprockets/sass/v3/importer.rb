@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-
+require_relative '../v2/importer'
 module Sprockets
   module Sass
     module V3
@@ -10,9 +10,8 @@ module Sprockets
         protected
 
 
-        def resolve_path_with_load_paths(context, file)
-          context.resolve(file.to_s)
-          #load_paths: context.environment.paths, base_path: root_path, accept: syntax_mime_type(path))
+        def resolve_path_with_load_paths(context, path, root_path, file)
+          context.resolve(file.to_s, load_paths: context.environment.paths, base_path: root_path, accept: syntax_mime_type(path))
         rescue
           nil
         end
@@ -23,7 +22,7 @@ module Sprockets
         def resolve(context, path, base_path)
           paths, root_path = possible_files(context, path, base_path)
           paths.each do |file|
-            found_item = resolve_path_with_load_paths(context,file)
+            found_item = resolve_path_with_load_paths(context,path, root_path, file)
             return found_item if !found_item.nil? && asset_requirable?(context, found_item)
           end
           nil
@@ -39,7 +38,7 @@ module Sprockets
         end
 
         def asset_requirable?(context, path)
-          pathname = resolve_path_with_load_paths(context, path)
+          pathname = context.resolve(path) rescue nil
           return false if pathname.nil?
           stat = stat_of_pathname(context, pathname, path)
           return false unless stat && stat.file?
@@ -127,7 +126,7 @@ module Sprockets
         end
 
         def syntax_mime_type(path)
-          "text/#{syntax(path)}"
+          "text/css"
         end
 
         def filtered_processor_classes
