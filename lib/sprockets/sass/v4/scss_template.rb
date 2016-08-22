@@ -5,7 +5,6 @@ module Sprockets
     module V4
       # Preprocessor for SCSS files
       class ScssTemplate < Sprockets::Sass::V4::SassTemplate
-
       end
     end
   end

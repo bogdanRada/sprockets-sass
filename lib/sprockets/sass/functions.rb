@@ -1,8 +1,9 @@
+# frozen_string_literal: true
 module Sass
   module Script
     # Original Sass script functions are overidden with this methods
     module Functions
-      include Sprockets::Sass::Utils.get_class_by_version("Functions")
+      include Sprockets::Sass::Utils.get_class_by_version('Functions')
 
       # Hack to ensure previous API declarations (by Compass or whatever)
       # don't take precedence.

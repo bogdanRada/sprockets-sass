@@ -5,7 +5,6 @@ module Sprockets
     module V4
       # Preprocessor for SASS files
       class SassTemplate < Sprockets::Sass::V3::SassTemplate
-
         def self.default_mime_type
           "text/#{syntax}"
         end
@@ -21,8 +20,6 @@ module Sprockets
             Sprockets::Sass::V4::Importer.new
           end
         end
-
-
       end
     end
   end

@@ -41,7 +41,7 @@ module Sprockets
           inspect
         end
 
-        protected
+      protected
 
         # Create a Sass::Engine from the given path.
         def engine_from_path(path, base_path, options)
@@ -49,10 +49,10 @@ module Sprockets
           (pathname = resolve(context, path, base_path)) || (return nil)
           context.depend_on pathname
           ::Sass::Engine.new evaluate(context, pathname), options.merge(
-          filename: pathname.to_s,
-          syntax: syntax(pathname),
-          importer: self,
-          custom: { sprockets_context: context }
+            filename: pathname.to_s,
+            syntax: syntax(pathname),
+            importer: self,
+            custom: { sprockets_context: context }
           )
         end
 
@@ -67,19 +67,18 @@ module Sprockets
           end
           return nil if engine_imports.empty?
           ::Sass::Engine.new engine_imports, options.merge(
-          filename: base_path.to_s,
-          syntax: syntax(base_path.to_s),
-          importer: self,
-          custom: { sprockets_context: context }
+            filename: base_path.to_s,
+            syntax: syntax(base_path.to_s),
+            importer: self,
+            custom: { sprockets_context: context }
           )
         end
-
 
         # Finds an asset from the given path. This is where
         # we make Sprockets behave like Sass, and import partial
         # style paths.
         def resolve(context, path, base_path)
-          paths, root_path = possible_files(context, path, base_path)
+          paths, _root_path = possible_files(context, path, base_path)
           paths.each do |file|
             context.resolve(file.to_s) do |found|
               return found if context.asset_requirable?(found)
@@ -87,7 +86,6 @@ module Sprockets
           end
           nil
         end
-
 
         # Finds all of the assets using the given glob.
         def resolve_glob(context, glob, base_path)
@@ -144,12 +142,12 @@ module Sprockets
           path.to_s.include?('.sass') ? :sass : :scss
         end
 
-        def syntax_mime_type(path)
+        def syntax_mime_type(_path)
           'text/css'
         end
 
         def filtered_processor_classes
-          classes = [Sprockets::Sass::Utils.get_class_by_version("SassTemplate"), Sprockets::Sass::Utils.get_class_by_version("ScssTemplate")]
+          classes = [Sprockets::Sass::Utils.get_class_by_version('SassTemplate'), Sprockets::Sass::Utils.get_class_by_version('ScssTemplate')]
           classes << Sprockets::SassProcessor if defined?(Sprockets::SassProcessor)
           classes << Sprockets::SasscProcessor if defined?(Sprockets::SasscProcessor)
           classes
@@ -165,12 +163,12 @@ module Sprockets
           context.environment.preprocessors(content_type)
         end
 
-        def get_context_transformers(context, content_type, path)
+        def get_context_transformers(_context, _content_type, _path)
           []
         end
 
         def get_engines_from_attributes(attributes)
-         attributes.engines
+          attributes.engines
         end
 
         def get_all_processors_for_evaluate(context, content_type, attributes, path)

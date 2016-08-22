@@ -7,7 +7,7 @@ module Sprockets
         VERSION = '1'
 
         def self.default_mime_type
-          "text/css"
+          'text/css'
         end
 
         # Internal: Defines default sass syntax to use. Exposed so the ScssProcessor
@@ -51,7 +51,7 @@ module Sprockets
           @cache_key = "#{self.class.name}:#{::Sass::VERSION}:#{VERSION}:#{Sprockets::Sass::Utils.digest(options)}"
           @functions = Module.new do
             include Sprockets::Helpers if defined?(Sprockets::Helpers)
-            include Sprockets::Sass::Utils.get_class_by_version("Functions")
+            include Sprockets::Sass::Utils.get_class_by_version('Functions')
           end
         end
 
@@ -66,7 +66,7 @@ module Sprockets
           @input = options
           @functions = Module.new do
             include Sprockets::Helpers if defined?(Sprockets::Helpers)
-            include Sprockets::Sass::Utils.get_class_by_version("Functions")
+            include Sprockets::Sass::Utils.get_class_by_version('Functions')
             include options[:functions] if options[:functions]
             class_eval(&block) if block_given?
           end
@@ -196,14 +196,14 @@ module Sprockets
           sprockets_options = fetch_sprockets_options
 
           sass = merge_sass_options(default_sass_options, options).merge(
-          filename: filename,
-          line: 1,
-          syntax: self.class.syntax,
-          cache: true,
-          cache_store: build_cache_store(context),
-          importer: importer,
-          custom: { sprockets_context: context },
-          sprockets: sprockets_options
+            filename: filename,
+            line: 1,
+            syntax: self.class.syntax,
+            cache: true,
+            cache_store: build_cache_store(context),
+            importer: importer,
+            custom: { sprockets_context: context },
+            sprockets: sprockets_options
           )
           sass
         end

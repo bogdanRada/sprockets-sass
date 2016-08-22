@@ -5,10 +5,10 @@ module Sprockets
     module V3
       # Preprocessor for SASS files
       class SassTemplate < Sprockets::Sass::V2::SassTemplate
-
         def build_cache_store(context)
           return nil if context.environment.cache.nil?
-          cache, version = @input[:cache], @cache_version
+          cache = @input[:cache]
+          version = @cache_version
           if defined?(Sprockets::SassProcessor::CacheStore)
             Sprockets::SassProcessor::CacheStore.new(cache, version)
           else
@@ -27,8 +27,6 @@ module Sprockets
             Sprockets::Sass::V3::Importer.new
           end
         end
-
-
       end
     end
   end

@@ -77,10 +77,10 @@ module Sprockets
           # Work with the Compass #image_url API
           if options.respond_to? :value
             case options.value
-            when true
-              return image_path source
-            else
-              options = {}
+              when true
+                return image_path source
+              else
+                options = {}
             end
           end
           ::Sass::Script::String.new "url(#{image_path(source, options)})"
@@ -112,16 +112,16 @@ module Sprockets
           # Work with the Compass #font_url API
           if options.respond_to? :value
             case options.value
-            when true
-              return font_path source
-            else
-              options = {}
+              when true
+                return font_path source
+              else
+                options = {}
             end
           end
           ::Sass::Script::String.new "url(#{font_path(source, options)})"
         end
 
-        protected
+      protected
 
         # Returns a reference to the Sprocket's context through
         # the importer.

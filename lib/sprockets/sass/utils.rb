@@ -4,11 +4,9 @@ module Sprockets
     # utility functions that can be used statically from anywhere
     class Utils
       class << self
-
         def version_of_sprockets
           Sprockets::VERSION.split('.')[0].to_i
         end
-
 
         def read_file_binary(file, options = {})
           default_encoding = options.delete :default_encoding
@@ -51,12 +49,20 @@ module Sprockets
 
         def get_class_by_version(class_name)
           class_found = nil
-          if  Sprockets::Sass::Registration::AVAILABLE_VERSIONS.include?(version_of_sprockets)
-            class_found = constantize("Sprockets::Sass::V#{version_of_sprockets}::#{class_name}") rescue  nil
+          if Sprockets::Sass::Registration::AVAILABLE_VERSIONS.include?(version_of_sprockets)
+            class_found = begin
+                            constantize("Sprockets::Sass::V#{version_of_sprockets}::#{class_name}")
+                          rescue
+                            nil
+                          end
           end
           if class_found.nil?
             classes = Sprockets::Sass::Registration::AVAILABLE_VERSIONS.map do |version|
-              constantize("Sprockets::Sass::V#{version}::#{class_name}") rescue  nil
+              begin
+                constantize("Sprockets::Sass::V#{version}::#{class_name}")
+              rescue
+                nil
+              end
             end.compact
             classes.first
           else
@@ -64,9 +70,8 @@ module Sprockets
           end
         end
 
-
         def constantize(camel_cased_word)
-          names = camel_cased_word.split('::'.freeze)
+          names = camel_cased_word.split('::')
 
           # Trigger a built-in NameError exception including the ill-formed constant in the message.
           Object.const_get(camel_cased_word) if names.empty?
@@ -74,7 +79,7 @@ module Sprockets
           # Remove the first blank element in case of '::ClassName' notation.
           names.shift if names.size > 1 && names.first.empty?
 
-          names.inject(Object) do |constant, name|
+          names.reduce(Object) do |constant, name|
             if constant == Object
               constant.const_get(name)
             else
@@ -84,7 +89,7 @@ module Sprockets
 
               # Go down the ancestors to check if it is owned directly. The check
               # stops when we reach Object or the end of ancestors tree.
-              constant = constant.ancestors.inject do |const, ancestor|
+              constant = constant.ancestors.each_with_object do |ancestor, const|
                 break const    if ancestor == Object
                 break ancestor if ancestor.const_defined?(name, false)
                 const

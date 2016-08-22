@@ -6,7 +6,7 @@ module Sprockets
       # class used for importing files from SCCS and SASS files
       class Importer < Sprockets::Sass::V3::Importer
 
-        def stat_of_pathname(context, pathname, path)
+        def stat_of_pathname(context, pathname, _path)
           asset = context.environment.load(pathname)
           context.environment.stat(asset.filename)
         end
@@ -17,8 +17,6 @@ module Sprockets
           attributes = {}
           [content_type, attributes]
         end
-
-
       end
     end
   end
