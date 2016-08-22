@@ -140,10 +140,11 @@ module Sprockets
             other_options[:load_paths] = other_paths + load_paths
           end
           options = options.merge(other_options)
+          options[:load_paths] = options[:load_paths].is_a?(Array) ? options[:load_paths] : []
           options[:load_paths] = options[:load_paths].concat(context.environment.paths)
           options
         end
-
+        
         def default_sass_config
           if defined?(Compass)
             merge_sass_options Compass.sass_engine_options.dup, Sprockets::Sass.options

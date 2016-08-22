@@ -24,24 +24,14 @@ Gem::Specification.new do |s|
   # usually the platform needs to be specified also, to avoid people trying to install this gem on wrong platform
   s.platform = Gem::Platform::RUBY
 
-  # Useful to know from which ruby version we need to maintain this gem
-  # Sprockets currently uses this, but Ruby 1.9.x is not maintained anymore.
-  # Maybe we could drop it and use Ruby 2.0 instead or greater
-  s.required_ruby_version = '>= 1.9.3'
 
-  # The automatic link generation will be removed in future versions of rubygems,
-  # and instead we need to use the metadata to show links on Rubygems.org.
-  # There are at least 2 open pull requests that will be accepted soon ( see #724 and #1234 )
-  # And this can be useful to add more links  to wiki or some other pages. This however works only with Ruby 2.0
-  # We can add even more arbitrary data to the metadata
-  #
-  # s.required_ruby_version = '>= 2.0'
-  # s.required_rubygems_version = '>= 2.0'
-  # s.metadata = {
-  #   'source_url' => s.homepage,
-  #   'issue_tracker' => "#{s.homepage}/issues"
-  # }
-
+  s.required_ruby_version = '>= 2.0'
+  s.required_rubygems_version = '>= 2.0'
+  s.metadata = {
+    'source_url' => s.homepage,
+    'issue_tracker' => "#{s.homepage}/issues"
+  }
+  
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split('\n').map { |f| File.basename(f) }
