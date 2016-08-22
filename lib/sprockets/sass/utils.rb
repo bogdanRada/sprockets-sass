@@ -4,6 +4,12 @@ module Sprockets
     # utility functions that can be used statically from anywhere
     class Utils
       class << self
+
+        def version_of_sprockets
+          Sprockets::VERSION.split('.')[0].to_i
+        end
+
+
         def read_file_binary(file, options = {})
           default_encoding = options.delete :default_encoding
 
@@ -41,6 +47,46 @@ module Sprockets
             data.force_encoding(Encoding.default_external) if Encoding.default_external
           end
           data
+        end
+
+        def get_class_by_version(class_name)
+          available_versions = Sprockets::Sass::Registration::ACTIONS.map{|hash| hash[:min]}.concat([Sprockets::Sass::Utils.version_of_sprockets, Sprockets::Sass::Registration::DEFAULT_ACTION[:min]]).compact.uniq
+          classes = available_versions.sort.reverse.select do |version|
+            constantize("Sprockets::Sass::V#{version}::#{class_name}") rescue  nil
+          end
+         clasess.first
+        end
+
+
+        def constantize(camel_cased_word)
+          names = camel_cased_word.split('::'.freeze)
+
+          # Trigger a built-in NameError exception including the ill-formed constant in the message.
+          Object.const_get(camel_cased_word) if names.empty?
+
+          # Remove the first blank element in case of '::ClassName' notation.
+          names.shift if names.size > 1 && names.first.empty?
+
+          names.inject(Object) do |constant, name|
+            if constant == Object
+              constant.const_get(name)
+            else
+              candidate = constant.const_get(name)
+              next candidate if constant.const_defined?(name, false)
+              next candidate unless Object.const_defined?(name)
+
+              # Go down the ancestors to check if it is owned directly. The check
+              # stops when we reach Object or the end of ancestors tree.
+              constant = constant.ancestors.inject do |const, ancestor|
+                break const    if ancestor == Object
+                break ancestor if ancestor.const_defined?(name, false)
+                const
+              end
+
+              # owner is in Object, so raise
+              constant.const_get(name, false)
+            end
+          end
         end
 
         def module_include(base, mod)

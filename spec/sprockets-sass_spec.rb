@@ -21,7 +21,7 @@ describe Sprockets::Sass do
     expect(asset.to_s).to eql("body {\n  color: blue; }\n")
   end
 
-  if Sprockets::Sass.version_of_sprockets < 4
+  if Sprockets::Sass::Utils.version_of_sprockets < 4
     it 'processes scss files normally without the .css extension' do
       @assets.file 'main.scss', '//= require dep'
       @assets.file 'dep.scss', 'body { color: blue; }'
@@ -222,7 +222,7 @@ describe Sprockets::Sass do
 
     write_asset(dep, '$color: red;')
 
-    asset = Sprockets::Sass.version_of_sprockets >= 3 ? @env['main.css'] : asset
+    asset = Sprockets::Sass::Utils.version_of_sprockets >= 3 ? @env['main.css'] : asset
     expect(asset).to_not be_fresh(@env, old_asset)
   end
 
@@ -237,7 +237,7 @@ describe Sprockets::Sass do
 
     write_asset(dep, '$color: red;')
 
-    asset = Sprockets::Sass.version_of_sprockets >= 3 ? @env['main.css'] : asset
+    asset = Sprockets::Sass::Utils.version_of_sprockets >= 3 ? @env['main.css'] : asset
     expect(asset).to_not be_fresh(@env, old_asset)
   end
 
@@ -252,7 +252,7 @@ describe Sprockets::Sass do
 
     write_asset(dep, "$bg-color: white;" )
 
-    asset = Sprockets::Sass.version_of_sprockets >= 3 ? @env['main.css'] : asset
+    asset = Sprockets::Sass::Utils.version_of_sprockets >= 3 ? @env['main.css'] : asset
 
     expect(asset).to_not be_fresh(@env, old_asset)
   end
@@ -264,7 +264,7 @@ describe Sprockets::Sass do
     @assets.file 'main.css.scss', %($color: blue;\nbody { color: $color; })
 
     @env['main.css'].to_s
-    if Sprockets::Sass.version_of_sprockets < 3
+    if Sprockets::Sass::Utils.version_of_sprockets < 3
       if Sass.version[:minor] > 2
         sass_cache = cache.detect { |key, value| value['pathname'] =~ /main\.css\.scss/ }
       else
@@ -358,22 +358,29 @@ describe Sprockets::Sass do
     expect(@env['bullets.css'].to_s).to match(%r[background: url\("/assets/bullet\.gif"\)])
   end
 
+  it 'compresses css from string' do
+    compressor = Sprockets::Sass::V2::Compressor.new
+    compressed_css = compressor.compress("div {\n  color: red;\n}\n")
+    expect(compressed_css).to eql("div{color:red}\n")
+  end
+    if Sprockets::Sass::Utils.version_of_sprockets >= 3
   it 'compresses css from filename' do
     file_path = @assets.file 'asset_path.css.scss', %(div {\n  color: red;\n}\n)
-    compressor = Sprockets::Sass::Compressor.new
+    compressor = Sprockets::Sass::V3::Compressor.new
     compressed_css = compressor.run(file_path)
     expect(compressed_css).to eql("div{color:red}\n")
   end
 
   it 'compresses css from string' do
-    compressor = Sprockets::Sass::Compressor.new
+    compressor = Sprockets::Sass::V3::Compressor.new
     compressed_css = compressor.run("div {\n  color: red;\n}\n")
     expect(compressed_css).to eql("div{color:red}\n")
   end
+end
 
-  if Sprockets::Sass.version_of_sprockets < 3
+  if Sprockets::Sass::Utils.version_of_sprockets < 3
     it 'compresses css using the environment compressor' do
-      @env.css_compressor = Sprockets::Sass::Compressor
+      @env.css_compressor =  Sprockets::Sass::V2::Compressor
       @assets.file 'asset_path.css.scss', %(div {\n  color: red;\n}\n)
       res = compile_asset_and_return_compilation(@env, @public_dir, "asset_path.css")
       expect(res).to  eql("div{color:red}\n")
@@ -388,30 +395,30 @@ describe Sprockets::Sass do
   end
 
 
-  describe Sprockets::Sass::SassTemplate do
-    let(:template) do
-      Sprockets::Sass::SassTemplate.new(@assets.file 'bullet.gif') do
-        # nothing
-      end
-    end
-    describe 'initialize_engine' do
-
-      it 'does add Sass functions if sprockets-helpers is not available' do
-        Sprockets::Sass::SassTemplate.sass_functions_initialized = false
-        Sprockets::Sass.add_sass_functions = true
-        Sprockets::Sass::SassTemplate.any_instance.should_receive(:require).with('sprockets/helpers').and_raise LoadError
-        Sprockets::Sass::SassTemplate.any_instance.should_not_receive(:require).with 'sprockets/sass/functions'
-        template
-        expect(Sprockets::Sass::SassTemplate.engine_initialized?).to be_falsy
-      end
-
-      it 'does not add Sass functions if add_sass_functions is false' do
-        Sprockets::Sass.add_sass_functions = false
-        template.should_not_receive(:require).with 'sprockets/sass/functions'
-        template.initialize_engine
-        expect(Sprockets::Sass::SassTemplate.engine_initialized?).to be_falsy
-        Sprockets::Sass.add_sass_functions = true
-      end
-    end
-  end
-end
+#   describe Sprockets::Sass::SassTemplate do
+#     let(:template) do
+#       Sprockets::Sass::SassTemplate.new(@assets.file 'bullet.gif') do
+#         # nothing
+#       end
+#     end
+#     describe 'initialize_engine' do
+#
+#       it 'does add Sass functions if sprockets-helpers is not available' do
+#         Sprockets::Sass::SassTemplate.sass_functions_initialized = false
+#         Sprockets::Sass.add_sass_functions = true
+#         Sprockets::Sass::SassTemplate.any_instance.should_receive(:require).with('sprockets/helpers').and_raise LoadError
+#         Sprockets::Sass::SassTemplate.any_instance.should_not_receive(:require).with 'sprockets/sass/functions'
+#         template
+#         expect(Sprockets::Sass::SassTemplate.engine_initialized?).to be_falsy
+#       end
+#
+#       it 'does not add Sass functions if add_sass_functions is false' do
+#         Sprockets::Sass.add_sass_functions = false
+#         template.should_not_receive(:require).with 'sprockets/sass/functions'
+#         template.initialize_engine
+#         expect(Sprockets::Sass::SassTemplate.engine_initialized?).to be_falsy
+#         Sprockets::Sass.add_sass_functions = true
+#       end
+#     end
+#   end
+ end

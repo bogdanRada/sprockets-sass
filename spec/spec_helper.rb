@@ -20,7 +20,7 @@ Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each { |f| require f }
 
 
 def compile_asset_and_return_compilation(env, public_dir, filename )
-  if Sprockets::Sass.version_of_sprockets < 3
+  if Sprockets::Sass::Utils.version_of_sprockets < 3
     manifest = Sprockets::Manifest.new(env, public_dir)
   else
     manifest = Sprockets::Manifest.new(env, public_dir, File.join(public_dir ,'manifest.json'))
@@ -36,7 +36,7 @@ def write_asset(filename, contents, mtime = nil)
   File.open(filename, 'w') do |f|
     f.write(contents)
   end
-  if Sprockets::Sass.version_of_sprockets >= 3
+  if Sprockets::Sass::Utils.version_of_sprockets >= 3
     File.utime(mtime, mtime, filename)
   else
     mtime = Time.now + 1
