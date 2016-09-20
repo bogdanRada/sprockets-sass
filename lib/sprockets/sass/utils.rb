@@ -57,6 +57,12 @@ module Sprockets
           nil
         end
 
+        def get_less_class_by_version(class_name, version = version_of_sprockets)
+          constantize("Sprockets::Less::V#{version}::#{class_name}")
+        rescue
+          nil
+        end
+
         def constantize(camel_cased_word)
           names = camel_cased_word.split('::')
 

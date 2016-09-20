@@ -126,7 +126,7 @@ module Sprockets
           else
             css
           end
-
+          
           #  Tilt::SassTemplate.new(filename, sass_options(filename, context)).render(self)
         rescue => e
           # Annotates exception message with parse line number

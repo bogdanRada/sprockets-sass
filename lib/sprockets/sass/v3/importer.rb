@@ -6,7 +6,7 @@ module Sprockets
       # class used for importing files from SCCS and SASS files
       class Importer < Sprockets::Sass::V2::Importer
         GLOB = /\*|\[.+\]/
-        
+
       protected
 
         def resolve_path_with_load_paths(context, path, root_path, file)
@@ -160,7 +160,7 @@ module Sprockets
           processors.each do |processor|
             data = call_processor_input(processor, context, input, processors)
           end
-
+          
           data
         end
 
@@ -194,6 +194,8 @@ module Sprockets
         end
 
         def evaluate_path_from_context(context, path, processors)
+          less_processor = Sprockets::Sass::Utils.get_less_class_by_version('LessTemplate')
+          processors = [less_processor] if less_processor && path.include?('.less')
           process(processors, context, path)
         end
 
