@@ -20,17 +20,10 @@ module Sprockets
           Sprockets::Sass::V3::CacheStore.new(*args)
         end
 
-        # Allow the use of custom SASS importers, making sure the
-        # custom importer is a `Sprockets::Sass::Importer`
-        def fetch_importer_class
-          if defined?(@importer_class) && !@importer_class.nil?
-            @importer_class
-          elsif default_sass_options.key?(:importer) && default_sass_options[:importer].is_a?(Importer)
-            default_sass_options[:importer]
-          else
-            Sprockets::Sass::V3::Importer.new
-          end
+        def custom_importer_class(*_args)
+          Sprockets::Sass::V3::Importer.new
         end
+
       end
     end
   end

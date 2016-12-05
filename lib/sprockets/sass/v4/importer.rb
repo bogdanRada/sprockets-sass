@@ -5,15 +5,25 @@ module Sprockets
     module V4
       # class used for importing files from SCCS and SASS files
       class Importer < Sprockets::Sass::V3::Importer
-        def syntax_mime_type(path)
-          "text/#{syntax(path)}"
-        end
+
+       def reverse_syntax(path)
+         path.to_s.include?('.sass') ? :scss : :sass
+       end
 
         def engine_from_glob(glob, base_path, options)
           context = options[:custom][:sprockets_context]
+          env_root_paths = context_load_pathnames(context)
+          root_path = env_root_paths.find do |env_root_path|
+            base_path.to_s.start_with?(env_root_path.to_s)
+          end
+          root_path ||= context_root_path(context)
           engine_imports = resolve_glob(context, glob, base_path).reduce(''.dup) do |imports, path|
             context.depend_on path[:file_url]
-            relative_path = path[:path].relative_path_from Pathname.new(base_path).dirname
+            begin
+            relative_path = path[:path].relative_path_from base_path.relative_path_from(root_path.to-s)
+          rescue
+            raise [imports, path, base_path, root_path].inspect
+          end
             imports << %(@import "#{relative_path}";\n)
           end
           return nil if engine_imports.empty?
@@ -24,6 +34,14 @@ module Sprockets
             custom: { sprockets_context: context }
           )
         end
+
+        # Create a Sass::Engine from the given path.
+        def engine_from_path(path, base_path, options)
+          context = options[:custom][:sprockets_context]
+          base_path = check_path_before_process(context, base_path)
+          super(path, base_path, options)
+        end
+
 
         # Finds all of the assets using the given glob.
         def resolve_glob(context, glob, base_path)
@@ -39,14 +57,24 @@ module Sprockets
         end
 
         def possible_files(context, path, base_path)
-          filename = check_path_before_process(context, base_path)
-          base_path = (filename.is_a?(Pathname) ? filename : Pathname.new(filename))
-          super(context, path, base_path)
-        end
+            path      = Pathname.new(path)
+            base_path = Pathname.new(base_path).dirname
+            partial_path = partialize_path(path)
+            additional_paths = [Pathname.new("#{path}.css"), Pathname.new("#{partial_path}.css"), Pathname.new("#{path}.css.#{syntax(path)}"), Pathname.new("#{partial_path}.css.#{syntax(path)}")]
+            additional_paths.concat([Pathname.new("#{path}.css"), Pathname.new("#{partial_path}.css"), Pathname.new("#{path}.css.#{reverse_syntax(path)}"), Pathname.new("#{partial_path}.css.#{reverse_syntax(path)}")])
+            paths = additional_paths.concat([path, partial_path])
+
+            # Find base_path's root
+            paths, root_path = add_root_to_possible_files(context, base_path, path, paths)
+            paths = additional_paths_for_sprockets(context, paths, path, base_path)
+            paths = paths.uniq
+            [paths.compact, root_path]
+          end
+
 
         def check_path_before_process(context, path, a = nil)
           if path.to_s.start_with?('file://')
-            path = Pathname.new(path.to_s.gsub(/\?type\=(.*)/, "?type=text/#{syntax(path)}"))  # @TODO : investigate why sometimes file:/// URLS are ending in ?type=text instead of ?type=text/scss
+        #  path = Pathname.new(path.to_s.gsub(/\?type\=(.*)/, "?type=text/#{syntax(path)}"))  # @TODO : investigate why sometimes file:/// URLS are ending in ?type=text instead of ?type=text/scss
             asset = context.environment.load(path) # because resolve now returns file://
             asset.filename
           else
