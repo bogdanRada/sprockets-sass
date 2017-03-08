@@ -20,9 +20,9 @@ module Sprockets
           engine_imports = resolve_glob(context, glob, base_path).reduce(''.dup) do |imports, path|
             context.depend_on path[:file_url]
             begin
-            relative_path = path[:path].relative_path_from base_path.relative_path_from(root_path.to-s)
-          rescue
-            raise [imports, path, base_path, root_path].inspect
+            relative_path = Pathname.new(path[:path]).relative_path_from Pathname.new(base_path).dirname
+          rescue => e
+            raise [e,  imports, path, base_path, root_path].inspect
           end
             imports << %(@import "#{relative_path}";\n)
           end

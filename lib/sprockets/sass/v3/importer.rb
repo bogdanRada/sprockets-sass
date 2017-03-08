@@ -6,7 +6,7 @@ module Sprockets
       # class used for importing files from SCCS and SASS files
       class Importer < Sprockets::Sass::V2::Importer
         GLOB = /\*|\[.+\]/
-        
+
       protected
 
         def resolve_path_with_load_paths(context, path, root_path, file)
@@ -32,7 +32,7 @@ module Sprockets
         end
 
         def available_content_types(path)
-          ['text/css', syntax_mime_type(path), "text/#{syntax(path)}+ruby"].compact.uniq
+          ['text/css', syntax_mime_type(path), "text/#{syntax(path)}+ruby", "application/#{syntax(path)}+ruby"].compact.uniq
         end
 
         def check_context_content_types(context, path)
