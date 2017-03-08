@@ -3,6 +3,9 @@ require 'bundler/gem_tasks'
 require 'appraisal'
 require 'rspec/core/rake_task'
 
+::Rake.application.class.class_eval do
+  alias_method :last_comment, :last_description
+end
 
 RSpec::Core::RakeTask.new(:spec) do |spec|
   spec.rspec_opts = ['--backtrace '] if ENV['DEBUG']
