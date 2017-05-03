@@ -75,8 +75,8 @@ module Sprockets
         def check_path_before_process(context, path, a = nil)
           if path.to_s.start_with?('file://')
         #  path = Pathname.new(path.to_s.gsub(/\?type\=(.*)/, "?type=text/#{syntax(path)}"))  # @TODO : investigate why sometimes file:/// URLS are ending in ?type=text instead of ?type=text/scss
-            asset = context.environment.load(path) # because resolve now returns file://
-            asset.filename
+           asset, _ = Sprockets::URIUtils.parse_asset_uri(path) #because resolve now returns file://
+           asset
           else
             path
           end
