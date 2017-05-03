@@ -160,7 +160,6 @@ module Sprockets
           processors.each do |processor|
             data = call_processor_input(processor, context, input, processors)
           end
-
           data
         end
 
@@ -204,6 +203,9 @@ module Sprockets
           content_type, attributes = content_type_of_path(context, path)
           processors = get_all_processors_for_evaluate(context, content_type, attributes, path)
           filter_all_processors(processors)
+          if processors.include?(Sprockets::ERBProcessor)
+            processors.push(processors.shift)
+          end
           evaluate_path_from_context(context, path, processors)
         end
       end

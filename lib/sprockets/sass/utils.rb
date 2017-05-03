@@ -3,6 +3,17 @@ module Sprockets
   module Sass
     # utility functions that can be used statically from anywhere
     class Utils
+      MIME_MAPPER = {
+        ".css.scss.erb" => "application/scss+ruby",
+        ".scss.erb" => "application/scss+ruby",
+        ".css.sass.erb" => "application/sass+ruby",
+        ".sass.erb" => "application/sass+ruby",
+        ".scss" => "text/scss",
+        ".css.scss" => "text/scss",
+        ".sass" => "text/sass",
+        ".css.sass" => "text/sass"
+      }
+      
       class << self
         def full_version_of_sprockets
           Sprockets::VERSION

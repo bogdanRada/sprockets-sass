@@ -6,9 +6,9 @@ module Sprockets
       # class used for importing files from SCCS and SASS files
       class Importer < Sprockets::Sass::V3::Importer
 
-       def reverse_syntax(path)
-         path.to_s.include?('.sass') ? :scss : :sass
-       end
+        def reverse_syntax(path)
+          path.to_s.include?('.sass') ? :scss : :sass
+        end
 
         def engine_from_glob(glob, base_path, options)
           context = options[:custom][:sprockets_context]
@@ -20,18 +20,18 @@ module Sprockets
           engine_imports = resolve_glob(context, glob, base_path).reduce(''.dup) do |imports, path|
             context.depend_on path[:file_url]
             begin
-            relative_path = Pathname.new(path[:path]).relative_path_from Pathname.new(base_path).dirname
-          rescue => e
-            raise [e ,  imports, path, base_path, root_path].inspect
-          end
+              relative_path = Pathname.new(path[:path]).relative_path_from Pathname.new(base_path).dirname
+            rescue => e
+              raise [e ,  imports, path, base_path, root_path].inspect
+            end
             imports << %(@import "#{relative_path}";\n)
           end
           return nil if engine_imports.empty?
           ::Sass::Engine.new engine_imports, options.merge(
-            filename: base_path.to_s,
-            syntax: syntax(base_path.to_s),
-            importer: self,
-            custom: { sprockets_context: context }
+          filename: base_path.to_s,
+          syntax: syntax(base_path.to_s),
+          importer: self,
+          custom: { sprockets_context: context }
           )
         end
 
@@ -57,26 +57,26 @@ module Sprockets
         end
 
         def possible_files(context, path, base_path)
-            path      = Pathname.new(path)
-            base_path = Pathname.new(base_path).dirname
-            partial_path = partialize_path(path)
-            additional_paths = [Pathname.new("#{path}.css"), Pathname.new("#{partial_path}.css"), Pathname.new("#{path}.css.#{syntax(path)}"), Pathname.new("#{partial_path}.css.#{syntax(path)}")]
-            additional_paths.concat([Pathname.new("#{path}.css"), Pathname.new("#{partial_path}.css"), Pathname.new("#{path}.css.#{reverse_syntax(path)}"), Pathname.new("#{partial_path}.css.#{reverse_syntax(path)}")])
-            paths = additional_paths.concat([path, partial_path])
+          path      = Pathname.new(path)
+          base_path = Pathname.new(base_path).dirname
+          partial_path = partialize_path(path)
+          additional_paths = [Pathname.new("#{path}.css"), Pathname.new("#{partial_path}.css"), Pathname.new("#{path}.css.#{syntax(path)}"), Pathname.new("#{partial_path}.css.#{syntax(path)}")]
+          additional_paths.concat([Pathname.new("#{path}.css"), Pathname.new("#{partial_path}.css"), Pathname.new("#{path}.css.#{reverse_syntax(path)}"), Pathname.new("#{partial_path}.css.#{reverse_syntax(path)}")])
+          paths = additional_paths.concat([path, partial_path])
 
-            # Find base_path's root
-            paths, root_path = add_root_to_possible_files(context, base_path, path, paths)
-            paths = additional_paths_for_sprockets(context, paths, path, base_path)
-            paths = paths.uniq
-            [paths.compact, root_path]
-          end
+          # Find base_path's root
+          paths, root_path = add_root_to_possible_files(context, base_path, path, paths)
+          paths = additional_paths_for_sprockets(context, paths, path, base_path)
+          paths = paths.uniq
+          [paths.compact, root_path]
+        end
 
 
         def check_path_before_process(context, path, a = nil)
           if path.to_s.start_with?('file://')
-        #  path = Pathname.new(path.to_s.gsub(/\?type\=(.*)/, "?type=text/#{syntax(path)}"))  # @TODO : investigate why sometimes file:/// URLS are ending in ?type=text instead of ?type=text/scss
-           asset, _ = Sprockets::URIUtils.parse_asset_uri(path) #because resolve now returns file://
-           asset
+            #  path = Pathname.new(path.to_s.gsub(/\?type\=(.*)/, "?type=text/#{syntax(path)}"))  # @TODO : investigate why sometimes file:/// URLS are ending in ?type=text instead of ?type=text/scss
+            asset, _ = Sprockets::URIUtils.parse_asset_uri(path) #because resolve now returns file://
+            asset
           else
             path
           end
@@ -90,25 +90,34 @@ module Sprockets
         # @TODO find better alternative than scanning file:// string for mime type
         def content_type_of_path(context, path)
           pathname = context.resolve(path)
-          content_type = pathname.nil? ? nil : pathname.to_s.scan(/\?type\=(.*)/).flatten.first unless pathname.nil?
+          real_path = path
+          if path.start_with?("file://")
+            real_path, attributes =  Sprockets::URIUtils.parse_asset_uri(path)
+          end
+          path_extension, path_content_type = Sprockets::PathUtils.match_path_extname(real_path, Sprockets::Sass::Utils::MIME_MAPPER)
           attributes = {}
-          [content_type, attributes]
+          [path_content_type, attributes]
         end
 
         def get_context_transformers(context, content_type, path)
           available_transformers =  context.environment.transformers[content_type]
           additional_transformers = available_transformers.key?(syntax_mime_type(path)) ? available_transformers[syntax_mime_type(path)] : []
+          additional_transformers = additional_transformers.respond_to?(:processors) ? additional_transformers.processors : additional_transformers
           additional_transformers.is_a?(Array) ? additional_transformers : [additional_transformers]
           css_transformers = available_transformers.key?('text/css') ? available_transformers['text/css'] : []
+          css_transformers = css_transformers.respond_to?(:processors) ? css_transformers.processors : css_transformers
           css_transformers = css_transformers.is_a?(Array) ? css_transformers : [css_transformers]
           additional_transformers = additional_transformers.concat(css_transformers)
+          if (additional_transformers != nil && additional_transformers.size > 0)
+              additional_transformers.uniq!
+          end
           additional_transformers
         end
 
         def filter_all_processors(processors)
           processors.delete_if do |processor|
             filtered_processor_classes.include?(processor) || filtered_processor_classes.any? do |filtered_processor|
-              !processor.is_a?(Proc) && ((processor.class != Class && processor.class < filtered_processor) || (processor.class == Class && processor < filtered_processor))
+              !processor.is_a?(Proc) && ((!processor.is_a?(Class) && processor.class < filtered_processor) || (processor.is_a?(Class) && processor < filtered_processor)) && !processors.include?(processor.class)
             end
           end
         end
