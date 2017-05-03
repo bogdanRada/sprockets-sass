@@ -11,9 +11,10 @@ module Sprockets
         ".scss" => "text/scss",
         ".css.scss" => "text/scss",
         ".sass" => "text/sass",
-        ".css.sass" => "text/sass"
+        ".css.sass" => "text/sass",
+        ".css" => "text/css"
       }
-      
+
       class << self
         def full_version_of_sprockets
           Sprockets::VERSION
