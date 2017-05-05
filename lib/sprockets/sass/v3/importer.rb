@@ -32,7 +32,7 @@ module Sprockets
         end
 
         def available_content_types(path)
-          ['text/css', syntax_mime_type(path), "text/#{syntax(path)}+ruby", "application/#{syntax(path)}+ruby"].compact.uniq
+          ['text/css',"text/scss", "text/sass" ,  syntax_mime_type(path), "text/#{syntax(path)}+ruby", "application/#{syntax(path)}+ruby"].compact.uniq
         end
 
         def check_context_content_types(context, path)
